@@ -7,7 +7,7 @@
 
 **Multi-agent AI code review for GitHub Pull Requests** — six specialist agents, static analysis (ESLint + Semgrep), deterministic confidence scoring, and role-based dashboards.
 
-Built end-to-end by **[Veerasegaran V P](https://github.com/veera-1175)** as a portfolio project demonstrating full-stack engineering, LLM orchestration, GitHub App webhooks, and AtlasIQ-style multi-tenant RBAC.
+Solo-built end-to-end by **[Veerasegaran V P](https://github.com/veera-1175)** — an independent multi-agent PR review product with LLM orchestration, GitHub App webhooks, and AtlasIQ-style multi-tenant RBAC.
 
 <p align="center">
   <img src="docs/screenshots/01-login.png" alt="Verdict login — Platform Admin, Org Admin, Developer" width="900" />
@@ -384,7 +384,7 @@ Templates: `apps/api/.env.template`, `apps/web/.env.template`
 | Durable multi-tenant DB (Supabase) on free Render | Optional / not required for demo |
 | Custom domain / paid always-on instances | Optional |
 
-**Verdict is complete as a portfolio MVP:** end-to-end PR review, RBAC, and a live demo. Remaining items are production hardening (persistent DB, always-on host), not core product gaps.
+**Verdict ships as a complete product MVP:** end-to-end PR review, RBAC, and a live demo. Remaining work is production hardening (persistent DB, always-on host), not core product gaps.
 
 ---
 
