@@ -310,7 +310,10 @@ export function Layout() {
         <OnboardingTour
           open={tourOpen}
           role={user.role}
-          onClose={() => setTourOpen(false)}
+          onClose={() => {
+            setTourOpen(false);
+            void completeOnboarding();
+          }}
           onComplete={() => void completeOnboarding()}
         />
       )}

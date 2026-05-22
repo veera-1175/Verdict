@@ -1,9 +1,23 @@
 import { Router } from "express";
 import { getLatestReport, getPullRequestRow, isDbConfigured } from "../db/queries.js";
 import { isLocalDbEnabled, localStore } from "../db/localStore.js";
-import { getAccessScope } from "../middleware/scope.js";
+import { getAccessScope, prVisibleToScope } from "../middleware/scope.js";
 
 export const reviewsRouter = Router();
+
+async function assertPrAccess(prId: string, scope: ReturnType<typeof getAccessScope>): Promise<void> {
+  if (isLocalDbEnabled()) {
+    if (!localStore.canAccessPullRequest(prId, scope)) {
+      const err = new Error("FORBIDDEN");
+      throw err;
+    }
+    return;
+  }
+  const pr = await getPullRequestRow(prId);
+  if (!prVisibleToScope(pr.author, scope)) {
+    throw new Error("FORBIDDEN");
+  }
+}
 
 reviewsRouter.get("/prs/:prId", async (req, res, next) => {
   try {
@@ -13,10 +27,7 @@ reviewsRouter.get("/prs/:prId", async (req, res, next) => {
     }
 
     const scope = getAccessScope(req);
-    if (isLocalDbEnabled() && !localStore.canAccessPullRequest(req.params.prId, scope)) {
-      res.status(403).json({ error: "You can only view your own pull request reports" });
-      return;
-    }
+    await assertPrAccess(req.params.prId, scope);
 
     const pr = await getPullRequestRow(req.params.prId);
 
@@ -31,6 +42,10 @@ reviewsRouter.get("/prs/:prId", async (req, res, next) => {
       github_url: `https://github.com/${pr.repo_full_name}/pull/${pr.pr_number}`,
     });
   } catch (err) {
+    if (err instanceof Error && err.message === "FORBIDDEN") {
+      res.status(403).json({ error: "You can only view your own pull request reports" });
+      return;
+    }
     if (err instanceof Error && err.message.includes("not found")) {
       res.status(404).json({ error: err.message });
       return;
@@ -47,10 +62,7 @@ reviewsRouter.get("/prs/:prId/report", async (req, res, next) => {
     }
 
     const scope = getAccessScope(req);
-    if (isLocalDbEnabled() && !localStore.canAccessPullRequest(req.params.prId, scope)) {
-      res.status(403).json({ error: "You can only view your own pull request reports" });
-      return;
-    }
+    await assertPrAccess(req.params.prId, scope);
 
     const data = await getLatestReport(req.params.prId);
 
@@ -61,6 +73,14 @@ reviewsRouter.get("/prs/:prId/report", async (req, res, next) => {
 
     res.json({ report: data.report, issues: data.issues });
   } catch (err) {
+    if (err instanceof Error && err.message === "FORBIDDEN") {
+      res.status(403).json({ error: "You can only view your own pull request reports" });
+      return;
+    }
+    if (err instanceof Error && err.message.includes("not found")) {
+      res.status(404).json({ error: err.message });
+      return;
+    }
     next(err);
   }
 });

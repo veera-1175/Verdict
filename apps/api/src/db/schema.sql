@@ -56,4 +56,16 @@ alter table pull_requests enable row level security;
 alter table review_reports enable row level security;
 alter table issues enable row level security;
 
--- Phase 6: tighten RLS policies per authenticated user / GitHub App install
+-- Phase 6: deny-by-default RLS. The API uses the service role (bypasses RLS).
+-- Keep anon/authenticated locked down until JWT claims + policies are expanded.
+drop policy if exists "deny_anon_repos" on repos;
+create policy "deny_anon_repos" on repos for all to anon using (false) with check (false);
+
+drop policy if exists "deny_anon_pull_requests" on pull_requests;
+create policy "deny_anon_pull_requests" on pull_requests for all to anon using (false) with check (false);
+
+drop policy if exists "deny_anon_review_reports" on review_reports;
+create policy "deny_anon_review_reports" on review_reports for all to anon using (false) with check (false);
+
+drop policy if exists "deny_anon_issues" on issues;
+create policy "deny_anon_issues" on issues for all to anon using (false) with check (false);

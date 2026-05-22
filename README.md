@@ -384,7 +384,10 @@ Templates: `apps/api/.env.template`, `apps/web/.env.template`
 | Durable multi-tenant DB (Supabase) on free Render | Optional / not required for demo |
 | Custom domain / paid always-on instances | Optional |
 
-**Verdict ships as a complete product MVP:** end-to-end PR review, RBAC, and a live demo. Remaining work is production hardening (persistent DB, always-on host), not core product gaps.
+**Verdict is complete as a product MVP** for portfolio, viva, and interview demos: end-to-end PR review, RBAC, and a live Render deploy. Remaining items above are production hardening only — not missing core features.
+
+To run locally: `npm run setup` → `npm run start:all` → http://localhost:5173  
+To walk the live demo: [verdict-web.onrender.com](https://verdict-web.onrender.com) as `admin@verdict.local` / `admin123`.
 
 ---
 

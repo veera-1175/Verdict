@@ -3,6 +3,13 @@ VERDICT — SETUP (admin once)
 
 Developers: open a PR. No local install.
 
+LIVE DEMO
+---------
+Dashboard: https://verdict-web.onrender.com
+API health: https://verdict-api-x75u.onrender.com/health
+Login (Org Admin): admin@verdict.local / admin123
+
+
 LOCAL
 -----
 1. npm run setup
@@ -26,6 +33,15 @@ After start:all, copy the printed Webhook URL (or your Render URL).
 PRODUCTION (Render)
 -------------------
 Deploy render.yaml → set env vars → update GitHub webhook to
-https://verdict-api.onrender.com/webhooks/github (your service URL).
+https://verdict-api-x75u.onrender.com/webhooks/github (your service URL).
 
 No ngrok needed after that.
+
+DONE CHECKLIST
+--------------
+[x] Multi-agent PR review + confidence score
+[x] GitHub comment + Check Run
+[x] 3-role RBAC (Platform / Org Admin / Developer)
+[x] Local demo (JSON DB) + Render live demo
+[x] README screenshots + .env templates
+[ ] Optional only: durable Supabase multi-tenant DB + always-on host
