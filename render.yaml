@@ -1,0 +1,44 @@
+services:
+  - type: web
+    name: verdict-api
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build -w @verdict/api
+    startCommand: npm run start -w @verdict/api
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: VERDICT_LOCAL_DB
+        value: "true"
+      - key: WEB_ORIGIN
+        value: "https://verdict-web.onrender.com"
+      - key: PUBLIC_DASHBOARD_URL
+        value: "https://verdict-web.onrender.com"
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GITHUB_APP_ID
+        sync: false
+      - key: GITHUB_APP_PRIVATE_KEY
+        sync: false
+      - key: GITHUB_WEBHOOK_SECRET
+        sync: false
+      - key: AUTO_FAIL_SCORE_THRESHOLD
+        value: "60"
+
+  - type: web
+    name: verdict-web
+    runtime: static
+    buildCommand: npm install && npm run build -w @verdict/web
+    staticPublishPath: apps/web/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: VITE_API_URL
+        value: "https://verdict-api-x75u.onrender.com"
+      - key: VITE_GITHUB_APP_SLUG
+        value: "verdict-1175"

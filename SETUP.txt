@@ -1,0 +1,31 @@
+VERDICT — SETUP (admin once)
+============================
+
+Developers: open a PR. No local install.
+
+LOCAL
+-----
+1. npm run setup
+2. npm run start:all
+3. Open http://localhost:5173
+
+GITHUB APP (once)
+-----------------
+After start:all, copy the printed Webhook URL (or your Render URL).
+
+1. https://github.com/settings/apps/new — name Verdict
+2. Webhook: https://…/webhooks/github
+3. Secret: same as GITHUB_WEBHOOK_SECRET in apps/api/.env
+4. Permissions: Contents R, Issues RW, Pull requests RW, Checks RW
+5. Event: Pull request
+6. Private key → github-app.pem (gitignored)
+7. apps/api/.env: GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY_PATH, GITHUB_WEBHOOK_SECRET
+8. apps/web/.env: VITE_GITHUB_APP_SLUG
+9. Settings → Install GitHub App on repos
+
+PRODUCTION (Render)
+-------------------
+Deploy render.yaml → set env vars → update GitHub webhook to
+https://verdict-api.onrender.com/webhooks/github (your service URL).
+
+No ngrok needed after that.
