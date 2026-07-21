@@ -7,7 +7,7 @@
 
 **Multi-agent AI code review for GitHub Pull Requests** — six specialist agents, static analysis (ESLint + Semgrep), deterministic confidence scoring, and role-based dashboards.
 
-Solo-built end-to-end by **[Veerasegaran V P](https://github.com/veera-1175)** — an independent multi-agent PR review product with LLM orchestration, GitHub App webhooks, and AtlasIQ-style multi-tenant RBAC.
+Built by **[veera](https://github.com/veera-1175)**.
 
 <p align="center">
   <img src="docs/screenshots/01-login.png" alt="Verdict login — Platform Admin, Org Admin, Developer" width="900" />
@@ -393,7 +393,7 @@ To walk the live demo: [verdict-web.onrender.com](https://verdict-web.onrender.c
 
 ## Author
 
-**Veerasegaran V P**
+**veera**
 
 - GitHub: [@veera-1175](https://github.com/veera-1175)
 - Repository: [github.com/veera-1175/verdict](https://github.com/veera-1175/verdict)
