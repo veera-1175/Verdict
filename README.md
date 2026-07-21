@@ -2,8 +2,8 @@
 
 [![Live Demo](https://img.shields.io/badge/Live_Demo-verdict--web.onrender.com-00C7B7?style=for-the-badge)](https://verdict-web.onrender.com)
 [![API](https://img.shields.io/badge/API-verdict--api--x75u.onrender.com-111111?style=for-the-badge)](https://verdict-api-x75u.onrender.com/health)
-[![GitHub](https://img.shields.io/badge/GitHub-veera--1175%2Fverdict-181717?logo=github)](https://github.com/veera-1175/verdict)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![GitHub](https://img.shields.io/badge/GitHub-veera--1175%2Fverdict-181717?style=for-the-badge&logo=github)](https://github.com/veera-1175/verdict)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
 **Multi-agent AI code review for GitHub Pull Requests** — six specialist agents, static analysis (ESLint + Semgrep), deterministic confidence scoring, and role-based dashboards.
 
