@@ -2,7 +2,7 @@
 
 [![Live Demo](https://img.shields.io/badge/Live_Demo-verdict--web.onrender.com-00C7B7?style=for-the-badge)](https://verdict-web.onrender.com)
 [![API](https://img.shields.io/badge/API-verdict--api--x75u.onrender.com-111111?style=for-the-badge)](https://verdict-api-x75u.onrender.com/health)
-[![GitHub](https://img.shields.io/badge/GitHub-veera--1175%2Fverdict-181717?style=for-the-badge&logo=github)](https://github.com/veera-1175/verdict)
+[![GitHub](https://img.shields.io/badge/GitHub-veera--1175%2FVerdict-181717?style=for-the-badge&logo=github)](https://github.com/veera-1175/Verdict)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
 **Multi-agent AI code review for GitHub Pull Requests** — six specialist agents, static analysis (ESLint + Semgrep), deterministic confidence scoring, and role-based dashboards.
@@ -244,8 +244,8 @@ flowchart LR
 **Prerequisites:** Node.js 20+, free [Groq API key](https://console.groq.com), optional [ngrok](https://ngrok.com) + GitHub App for live webhooks.
 
 ```powershell
-git clone https://github.com/veera-1175/verdict.git
-cd verdict
+git clone https://github.com/veera-1175/Verdict.git
+cd Verdict
 npm run setup       # install + copy env templates + demo review
 npm run start:all   # API :3001 + web :5173 + ngrok (static domain)
 ```
@@ -287,7 +287,7 @@ Login includes one-click role cards and quick-fill chips.
 ## Project structure
 
 ```
-verdict/
+Verdict/
 ├── apps/api/src/
 │   ├── agents/           # Domain agents (index) + master + LLM client
 │   ├── routes/           # auth, platform, org, repos, reviews, webhook…
@@ -338,7 +338,7 @@ npm run build -w @verdict/web
 
 ### Render (current live stack)
 
-1. Repo: [github.com/veera-1175/verdict](https://github.com/veera-1175/verdict)
+1. Repo: [github.com/veera-1175/Verdict](https://github.com/veera-1175/Verdict)
 2. Render → **Blueprint** → connect repo (`render.yaml`)
 3. Set secrets: `GROQ_API_KEY`, `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY`, `GITHUB_WEBHOOK_SECRET`
 4. GitHub App webhook → `https://<your-api>.onrender.com/webhooks/github`
@@ -396,7 +396,7 @@ To walk the live demo: [verdict-web.onrender.com](https://verdict-web.onrender.c
 **Veera**
 
 - GitHub: [@veera-1175](https://github.com/veera-1175)
-- Repository: [github.com/veera-1175/verdict](https://github.com/veera-1175/verdict)
+- Repository: [github.com/veera-1175/Verdict](https://github.com/veera-1175/Verdict)
 - Live demo: [verdict-web.onrender.com](https://verdict-web.onrender.com)
 
 If you are reviewing this for hiring, I can walk through the webhook → agents → confidence → RBAC path live in about 10 minutes.
