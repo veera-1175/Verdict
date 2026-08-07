@@ -134,10 +134,21 @@ export function Layout() {
   }, [user]);
 
   useEffect(() => {
-    if (user && needsOnboarding()) {
-      setTourOpen(true);
+    // First login only; Platform Admin never gets a tour.
+    if (!user) {
+      setTourOpen(false);
+      return;
     }
-  }, [user]);
+    if (user.role === "platform_admin") {
+      setTourOpen(false);
+      return;
+    }
+    if (needsOnboarding()) {
+      setTourOpen(true);
+    } else {
+      setTourOpen(false);
+    }
+  }, [user?.id, user?.role, user?.onboarding_completed]);
 
   if (user && !isPathAllowed(user.role, location.pathname)) {
     return <Navigate to="/" replace />;

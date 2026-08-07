@@ -1,29 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Modal, { ModalBody, ModalFooter, ModalHeader } from "./Modal";
 import type { Role } from "../lib/roles";
-
-const PLATFORM_STEPS: { title: string; body: string; path?: string }[] = [
-  {
-    title: "You own Verdict",
-    body: "Platform Admin owns the product. You onboard organizations and create Org Admins — you never register client repos or open PR reports.",
-  },
-  {
-    title: "Organizations",
-    body: "Create a company and assign its Org Admin. That person runs repos, developers, and reviews for their org.",
-    path: "/organizations",
-  },
-  {
-    title: "Usage only",
-    body: "Monitor Verdict usage across tenants (orgs, admins, review volume). Client PR contents stay confidential to each org.",
-    path: "/platform-usage",
-  },
-  {
-    title: "Hierarchy",
-    body: "Platform Admin → Org Admin → Developer. Creating a GitHub repo never auto-promotes anyone.",
-    path: "/organizations",
-  },
-];
 
 const ORG_ADMIN_STEPS: { title: string; body: string; path?: string }[] = [
   {
@@ -75,17 +53,18 @@ interface Props {
   onComplete: () => void;
 }
 
+/** First-login tour for Org Admin and Developer only. Platform Admin has no tour. */
 export function OnboardingTour({ open, role, onClose, onComplete }: Props) {
   const navigate = useNavigate();
-  const steps =
-    role === "platform_admin"
-      ? PLATFORM_STEPS
-      : role === "org_admin"
-        ? ORG_ADMIN_STEPS
-        : DEVELOPER_STEPS;
+  const steps = role === "org_admin" ? ORG_ADMIN_STEPS : DEVELOPER_STEPS;
   const [step, setStep] = useState(0);
 
-  if (!open) return null;
+  useEffect(() => {
+    if (open) setStep(0);
+  }, [open, role]);
+
+  // Platform Admin (and unknown roles) never show this tour.
+  if (!open || role === "platform_admin") return null;
 
   const current = steps[step];
   const isLast = step === steps.length - 1;

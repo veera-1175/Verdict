@@ -136,6 +136,7 @@ const DEFAULT_TEAM: Omit<LocalTeamMember, "id" | "created_at">[] = [
     role: "platform_admin",
     org_id: null,
     github_username: "skygazer",
+    onboarding_completed: true,
   },
   {
     email: "admin@verdict.local",
@@ -262,6 +263,7 @@ function seedTeamMembers(db: LocalDb): LocalDb {
       member.org_id = seed.org_id;
       member.name = seed.name;
       member.github_username = seed.github_username;
+      if (seed.onboarding_completed) member.onboarding_completed = true;
     }
   }
 

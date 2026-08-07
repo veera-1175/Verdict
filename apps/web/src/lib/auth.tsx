@@ -110,11 +110,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return body?.error || (res.status === 403 ? "Organization deactivated" : "Invalid credentials");
       }
       const data = (await res.json()) as User;
+      const role = normalizeRole(String(data.role));
       const onboardingDone =
-        data.onboarding_completed === true || localStorage.getItem(onboardingKey(data.id)) === "true";
+        role === "platform_admin" ||
+        data.onboarding_completed === true ||
+        localStorage.getItem(onboardingKey(data.id)) === "true";
+      if (onboardingDone) {
+        localStorage.setItem(onboardingKey(data.id), "true");
+      }
       persist({
         ...data,
-        role: normalizeRole(String(data.role)),
+        role,
         avatar: githubAvatarUrl(data.github_username) ?? undefined,
         onboarding_completed: onboardingDone,
       });
@@ -130,11 +136,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await fetch(`${getApiBase()}/api/profile`, { headers: authHeadersFor(user) });
       if (!res.ok) return;
       const profile = (await res.json()) as User;
+      const role = normalizeRole(String(profile.role));
+      const onboardingDone =
+        role === "platform_admin" ||
+        profile.onboarding_completed === true ||
+        user.onboarding_completed === true ||
+        localStorage.getItem(onboardingKey(user.id)) === "true";
       persist({
         ...user,
         ...profile,
-        role: normalizeRole(String(profile.role)),
+        role,
         avatar: githubAvatarUrl(profile.github_username) ?? undefined,
+        onboarding_completed: onboardingDone,
       });
     } catch {
       /* ignore */
@@ -158,6 +171,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   function needsOnboarding() {
     if (!user) return false;
+    // Platform Admin has no product tour — only Org Admin and Developer.
+    if (user.role === "platform_admin") return false;
     if (user.onboarding_completed) return false;
     return localStorage.getItem(onboardingKey(user.id)) !== "true";
   }
