@@ -10,6 +10,7 @@ import {
   type Role,
 } from "../lib/roles";
 import { VerdictLogo, IconShieldFeature, IconSpark, IconChartFeature, IconBolt } from "../components/Icons";
+import { ThemeToggle } from "../components/ThemeToggle";
 import Snowfall from "../components/Snowfall";
 
 const FEATURES = [
@@ -91,6 +92,9 @@ export function Login() {
       </div>
 
       <div className="relative z-10 flex flex-1 flex-col justify-center bg-ink-950 px-6 py-12 sm:px-12 lg:px-16">
+        <div className="absolute right-6 top-6 z-20 sm:right-10 sm:top-10 lg:right-12 lg:top-12">
+          <ThemeToggle />
+        </div>
         <div className="relative z-10 mx-auto w-full max-w-md animate-fade-in-up">
           <div className="mb-10 flex items-center gap-3 group lg:hidden">
             <VerdictLogo className="h-11 w-11" />

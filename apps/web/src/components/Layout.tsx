@@ -15,6 +15,7 @@ import { githubAvatarUrl } from "../lib/githubAvatar";
 import { VerdictLogo, IconGrid, IconChart, IconAgents, IconShield, IconSettings } from "./Icons";
 import { NotificationBell } from "./NotificationBell";
 import { OnboardingTour } from "./OnboardingTour";
+import { ThemeToggle } from "./ThemeToggle";
 import { apiGet, type PRMeta, type RepoRow } from "../lib/api";
 import { fetchStats, type PlatformStats } from "../lib/stats";
 
@@ -296,7 +297,7 @@ export function Layout() {
               <p className="mono-label text-ink-100">{dateLabel}</p>
               <h1 className="page-title mt-1 truncate">{headerTitle}</h1>
             </div>
-            <div className="flex shrink-0 items-center gap-6">
+            <div className="flex shrink-0 items-center gap-4 sm:gap-6">
               {stats && user && canAccessOrgWorkspace(user.role) && (
                 <div className="hidden items-center gap-8 md:flex">
                   <div>
@@ -310,6 +311,7 @@ export function Layout() {
                   </div>
                 </div>
               )}
+              <ThemeToggle />
               <NotificationBell />
             </div>
           </div>

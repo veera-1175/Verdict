@@ -20,34 +20,34 @@ export function VerdictLogo({
     >
       <defs>
         <linearGradient id={shimmerId} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="white" stopOpacity="0" />
-          <stop offset="45%" stopColor="white" stopOpacity="0" />
-          <stop offset="50%" stopColor="white" stopOpacity="0.55" />
-          <stop offset="55%" stopColor="white" stopOpacity="0" />
-          <stop offset="100%" stopColor="white" stopOpacity="0" />
+          <stop offset="0%" stopColor="var(--color-white)" stopOpacity="0" />
+          <stop offset="45%" stopColor="var(--color-white)" stopOpacity="0" />
+          <stop offset="50%" stopColor="var(--color-white)" stopOpacity="0.55" />
+          <stop offset="55%" stopColor="var(--color-white)" stopOpacity="0" />
+          <stop offset="100%" stopColor="var(--color-white)" stopOpacity="0" />
         </linearGradient>
       </defs>
 
-      <rect width="32" height="32" fill="white" className="verdict-bg" />
+      <rect width="32" height="32" fill="var(--color-white)" className="verdict-bg" />
 
       {/* Corner brackets — scan frame */}
-      <path className="verdict-corner verdict-corner-tl" d="M5 11V5H11" stroke="black" strokeWidth="1" />
-      <path className="verdict-corner verdict-corner-tr" d="M21 5H27V11" stroke="black" strokeWidth="1" />
-      <path className="verdict-corner verdict-corner-bl" d="M5 21V27H11" stroke="black" strokeWidth="1" />
-      <path className="verdict-corner verdict-corner-br" d="M21 27H27V21" stroke="black" strokeWidth="1" />
+      <path className="verdict-corner verdict-corner-tl" d="M5 11V5H11" stroke="var(--color-black)" strokeWidth="1" />
+      <path className="verdict-corner verdict-corner-tr" d="M21 5H27V11" stroke="var(--color-black)" strokeWidth="1" />
+      <path className="verdict-corner verdict-corner-bl" d="M5 21V27H11" stroke="var(--color-black)" strokeWidth="1" />
+      <path className="verdict-corner verdict-corner-br" d="M21 27H27V21" stroke="var(--color-black)" strokeWidth="1" />
 
       {/* V arms — draw in from top */}
       <path
         className="verdict-v-arm verdict-v-left"
         d="M10 9 L16 24.5"
-        stroke="black"
+        stroke="var(--color-black)"
         strokeWidth="2.4"
         strokeLinecap="square"
       />
       <path
         className="verdict-v-arm verdict-v-right"
         d="M22 9 L16 24.5"
-        stroke="black"
+        stroke="var(--color-black)"
         strokeWidth="2.4"
         strokeLinecap="square"
       />
@@ -56,11 +56,11 @@ export function VerdictLogo({
       <path
         className="verdict-v-fill"
         d="M7 9 L16 25 L25 9 L21.5 9 L16 18.5 L10.5 9 Z"
-        fill="black"
+        fill="var(--color-black)"
       />
 
       {/* Apex pulse — verdict “landed” */}
-      <circle className="verdict-apex" cx="16" cy="24.5" r="1.25" fill="white" />
+      <circle className="verdict-apex" cx="16" cy="24.5" r="1.25" fill="var(--color-white)" />
 
       {/* Shimmer sweep */}
       <rect

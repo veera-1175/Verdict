@@ -4,19 +4,22 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Themeable: flip via --color-black / --color-white in index.css
+        black: "var(--color-black)",
+        white: "var(--color-white)",
         ink: {
-          DEFAULT: "#000000",
-          50: "#ffffff",
-          100: "#f5f5f5",
-          200: "#e8e8e8",
-          300: "#d1d1d1",
-          400: "#b3b3b3",
-          500: "#949494",
-          600: "#6b6b6b",
-          700: "#454545",
-          800: "#2a2a2a",
-          900: "#141414",
-          950: "#080808",
+          DEFAULT: "var(--ink-default)",
+          50: "var(--ink-50)",
+          100: "var(--ink-100)",
+          200: "var(--ink-200)",
+          300: "var(--ink-300)",
+          400: "var(--ink-400)",
+          500: "var(--ink-500)",
+          600: "var(--ink-600)",
+          700: "var(--ink-700)",
+          800: "var(--ink-800)",
+          900: "var(--ink-900)",
+          950: "var(--ink-950)",
         },
       },
       fontFamily: {
@@ -24,14 +27,15 @@ export default {
         mono: ["JetBrains Mono", "monospace"],
       },
       backgroundImage: {
-        "grid-pattern": "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)",
+        "grid-pattern":
+          "linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px)",
       },
       backgroundSize: { grid: "48px 48px" },
       boxShadow: {
-        sharp: "0 0 0 1px rgba(255,255,255,0.08)",
-        glow: "0 0 60px rgba(255,255,255,0.08)",
-        lift: "0 24px 48px rgba(0,0,0,0.5)",
-        "hover-glow": "0 0 40px rgba(255,255,255,0.12)",
+        sharp: "0 0 0 1px var(--shadow-sharp)",
+        glow: "0 0 60px var(--shadow-glow)",
+        lift: "0 24px 48px var(--shadow-lift)",
+        "hover-glow": "0 0 40px var(--shadow-glow-strong)",
       },
       animation: {
         "fade-in": "fadeIn 0.6s ease-out forwards",
@@ -46,9 +50,18 @@ export default {
       },
       keyframes: {
         fadeIn: { "0%": { opacity: "0" }, "100%": { opacity: "1" } },
-        fadeInUp: { "0%": { opacity: "0", transform: "translateY(24px)" }, "100%": { opacity: "1", transform: "translateY(0)" } },
-        slideUp: { "0%": { opacity: "0", transform: "translateY(20px)" }, "100%": { opacity: "1", transform: "translateY(0)" } },
-        slideInLeft: { "0%": { opacity: "0", transform: "translateX(-12px)" }, "100%": { opacity: "1", transform: "translateX(0)" } },
+        fadeInUp: {
+          "0%": { opacity: "0", transform: "translateY(24px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        slideUp: {
+          "0%": { opacity: "0", transform: "translateY(20px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        slideInLeft: {
+          "0%": { opacity: "0", transform: "translateX(-12px)" },
+          "100%": { opacity: "1", transform: "translateX(0)" },
+        },
         shimmer: { "0%": { backgroundPosition: "-200% 0" }, "100%": { backgroundPosition: "200% 0" } },
         float: { "0%, 100%": { transform: "translateY(0)" }, "50%": { transform: "translateY(-8px)" } },
         pulseSoft: { "0%, 100%": { opacity: "1" }, "50%": { opacity: "0.5" } },
