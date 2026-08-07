@@ -74,7 +74,6 @@ export const PLATFORM_ADMIN_USER = {
   name: "Skygazer",
   role: "platform_admin" as const,
   org_id: null as string | null,
-  github_username: "skygazer",
 };
 
 export const ORG_ADMIN_USER = {

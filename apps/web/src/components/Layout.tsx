@@ -161,7 +161,9 @@ export function Layout() {
   });
 
   const sidebarAvatar =
-    githubAvatarUrl(user?.github_username, 72) || user?.avatar || null;
+    user?.avatar ||
+    (user?.role !== "platform_admin" ? githubAvatarUrl(user?.github_username, 72) : null) ||
+    null;
 
   const groups = user ? navForRole(user.role) : [];
   const headerTitle =
@@ -276,7 +278,7 @@ export function Layout() {
               <p className={user ? roleBadgeClass(user.role) : "role-badge"}>
                 {user ? ROLE_LABELS[user.role] : ""}
               </p>
-              {user?.github_username && (
+              {user?.role !== "platform_admin" && user?.github_username && (
                 <p className="truncate font-mono text-[9px] text-ink-400">@{user.github_username}</p>
               )}
             </div>

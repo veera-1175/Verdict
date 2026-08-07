@@ -26,7 +26,10 @@ export interface LocalTeamMember {
   name: string;
   role: "platform_admin" | "org_admin" | "developer";
   org_id: string | null;
+  /** Empty for Platform Admin — they are not a GitHub-linked identity. */
   github_username: string;
+  /** Optional uploaded/custom avatar (data URL or https URL). */
+  avatar?: string | null;
   created_at: string;
   onboarding_completed?: boolean;
   password_change_pending?: boolean;
@@ -135,7 +138,7 @@ const DEFAULT_TEAM: Omit<LocalTeamMember, "id" | "created_at">[] = [
     name: "Skygazer",
     role: "platform_admin",
     org_id: null,
-    github_username: "skygazer",
+    github_username: "",
     onboarding_completed: true,
   },
   {
@@ -186,6 +189,10 @@ function normalizeMember(m: Partial<LocalTeamMember> & { email: string }): Local
   if (role !== "platform_admin" && role !== "org_admin" && role !== "developer") {
     role = "developer";
   }
+  const github =
+    role === "platform_admin"
+      ? (m.github_username ?? "").trim()
+      : (m.github_username ?? m.email.split("@")[0]).trim();
   return {
     id: m.id ?? randomUUID(),
     email: m.email,
@@ -193,7 +200,8 @@ function normalizeMember(m: Partial<LocalTeamMember> & { email: string }): Local
     name: m.name ?? m.email,
     role,
     org_id: m.org_id === undefined ? (role === "platform_admin" ? null : DEMO_ORG_ID) : m.org_id,
-    github_username: m.github_username ?? m.email.split("@")[0],
+    github_username: github,
+    avatar: m.avatar ?? null,
     created_at: m.created_at ?? new Date().toISOString(),
     onboarding_completed: m.onboarding_completed,
     password_change_pending: m.password_change_pending,
@@ -259,11 +267,19 @@ function seedTeamMembers(db: LocalDb): LocalDb {
       });
     } else {
       const member = db.team_members.find((m) => m.email === seed.email)!;
+      // Keep role/org/github alignment for demos — do NOT overwrite name/avatar/password
+      // (Platform Admin profile edits must persist).
       member.role = seed.role;
       member.org_id = seed.org_id;
-      member.name = seed.name;
-      member.github_username = seed.github_username;
-      if (seed.onboarding_completed) member.onboarding_completed = true;
+      if (seed.role === "platform_admin") {
+        member.github_username = "";
+        member.onboarding_completed = true;
+      } else if (!member.github_username) {
+        member.github_username = seed.github_username;
+      }
+      if (seed.onboarding_completed && member.onboarding_completed == null) {
+        member.onboarding_completed = true;
+      }
     }
   }
 
@@ -1035,13 +1051,29 @@ export const localStore = {
 
   updateTeamMemberProfile(
     id: string,
-    updates: { name?: string; complete_onboarding?: boolean },
+    updates: {
+      name?: string;
+      complete_onboarding?: boolean;
+      avatar?: string | null;
+      password?: string;
+    },
   ): TeamMemberPublic {
     const db = loadDb();
     const member = db.team_members.find((m) => m.id === id);
     if (!member) throw new Error("User not found");
     if (updates.name !== undefined) member.name = updates.name.trim();
     if (updates.complete_onboarding) member.onboarding_completed = true;
+    if (updates.avatar !== undefined) {
+      member.avatar = updates.avatar;
+    }
+    if (updates.password !== undefined) {
+      if (member.role !== "platform_admin") {
+        throw new Error("Direct password update is only allowed for Platform Admin");
+      }
+      member.password = updates.password;
+    }
+    // Platform Admin never carries a GitHub identity
+    if (member.role === "platform_admin") member.github_username = "";
     saveDb(db);
     return this.getTeamMemberPublic(id)!;
   },

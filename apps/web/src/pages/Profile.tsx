@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../lib/auth";
 import { apiGet, apiPatch, apiPost } from "../lib/api";
 import { useNotification } from "../lib/notification";
@@ -11,6 +11,7 @@ interface ProfileData {
   name: string;
   role: string;
   github_username?: string;
+  avatar?: string | null;
   onboarding_completed?: boolean;
   password_change_pending?: boolean;
 }
@@ -24,6 +25,8 @@ interface OrgExtras {
 }
 
 const ORG_EXTRAS_KEY = "verdict-org-admin-profile";
+const MAX_AVATAR_EDGE = 256;
+const MAX_AVATAR_CHARS = 500_000;
 
 function loadOrgExtras(fallbackName: string, fallbackEmail: string): OrgExtras {
   try {
@@ -50,14 +53,61 @@ function loadOrgExtras(fallbackName: string, fallbackEmail: string): OrgExtras {
   };
 }
 
+/** Resize + compress to JPEG data URL for local DB storage. */
+function fileToAvatarDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith("image/")) {
+      reject(new Error("Please choose an image file"));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Could not read image"));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("Invalid image"));
+      img.onload = () => {
+        const scale = Math.min(1, MAX_AVATAR_EDGE / Math.max(img.width, img.height));
+        const w = Math.max(1, Math.round(img.width * scale));
+        const h = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          reject(new Error("Could not process image"));
+          return;
+        }
+        ctx.drawImage(img, 0, 0, w, h);
+        let quality = 0.85;
+        let dataUrl = canvas.toDataURL("image/jpeg", quality);
+        while (dataUrl.length > MAX_AVATAR_CHARS && quality > 0.4) {
+          quality -= 0.1;
+          dataUrl = canvas.toDataURL("image/jpeg", quality);
+        }
+        if (dataUrl.length > MAX_AVATAR_CHARS) {
+          reject(new Error("Image still too large after compression"));
+          return;
+        }
+        resolve(dataUrl);
+      };
+      img.src = String(reader.result);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 export function Profile() {
   const { user, refreshProfile } = useAuth();
   const { notifySuccess, notifyError } = useNotification();
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarDirty, setAvatarDirty] = useState(false);
+  const [clearAvatar, setClearAvatar] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -81,6 +131,9 @@ export function Profile() {
       .then((p) => {
         setProfile(p);
         setName(p.name);
+        setAvatarPreview(p.avatar || null);
+        setAvatarDirty(false);
+        setClearAvatar(false);
         if (user?.role === "org_admin") {
           const extras = loadOrgExtras(p.name || user.name, p.email);
           setContactName(extras.contact_name);
@@ -99,11 +152,28 @@ export function Profile() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function saveName(e: React.FormEvent) {
+  async function onPickAvatar(file: File | null) {
+    if (!file || !isPlatform) return;
+    try {
+      const dataUrl = await fileToAvatarDataUrl(file);
+      setAvatarPreview(dataUrl);
+      setAvatarDirty(true);
+      setClearAvatar(false);
+    } catch (err) {
+      notifyError(err instanceof Error ? err.message : "Could not use that image");
+    }
+  }
+
+  async function saveProfile(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     try {
-      await apiPatch("/api/profile", { name: name.trim() });
+      const payload: Record<string, unknown> = { name: name.trim() };
+      if (isPlatform) {
+        if (clearAvatar) payload.clear_avatar = true;
+        else if (avatarDirty && avatarPreview) payload.avatar = avatarPreview;
+      }
+      await apiPatch("/api/profile", payload);
       if (isOrgAdmin) {
         localStorage.setItem(
           ORG_EXTRAS_KEY,
@@ -128,7 +198,6 @@ export function Profile() {
 
   async function requestPasswordChange(e: React.FormEvent) {
     e.preventDefault();
-    if (isPlatform) return;
     if (newPassword !== confirmPassword) {
       notifyError("New passwords do not match");
       return;
@@ -139,21 +208,29 @@ export function Profile() {
     }
     setRequesting(true);
     try {
-      await apiPost("/api/profile/password-request", {
-        current_password: currentPassword,
-        new_password: newPassword,
-      });
+      if (isPlatform) {
+        await apiPatch("/api/profile", {
+          current_password: currentPassword,
+          new_password: newPassword,
+        });
+        notifySuccess("Password updated");
+      } else {
+        await apiPost("/api/profile/password-request", {
+          current_password: currentPassword,
+          new_password: newPassword,
+        });
+        notifySuccess(
+          isOrgAdmin
+            ? "Password change submitted — awaiting Platform Admin approval"
+            : "Password change submitted — awaiting Org Admin approval",
+        );
+      }
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      notifySuccess(
-        isOrgAdmin
-          ? "Password change submitted — awaiting Platform Admin approval"
-          : "Password change submitted — awaiting Org Admin approval",
-      );
       load();
     } catch (err) {
-      notifyError(err instanceof Error ? err.message : "Failed to submit request");
+      notifyError(err instanceof Error ? err.message : "Failed to update password");
     } finally {
       setRequesting(false);
     }
@@ -177,8 +254,13 @@ export function Profile() {
 
   const displayName = name || profile.name || user.name || "User";
   const initial = displayName.charAt(0).toUpperCase();
-  const githubUser = profile.github_username || user.github_username;
-  const ghAvatar = githubAvatarUrl(githubUser, 192);
+  const githubUser = isPlatform ? "" : profile.github_username || user.github_username || "";
+  const ghAvatar = !isPlatform ? githubAvatarUrl(githubUser, 192) : null;
+  const shownAvatar = isPlatform
+    ? clearAvatar
+      ? null
+      : avatarPreview || profile.avatar || null
+    : ghAvatar;
 
   const title = isPlatform
     ? "Platform Admin Profile"
@@ -187,7 +269,7 @@ export function Profile() {
       : "My Profile";
 
   const subtitle = isPlatform
-    ? "Your Verdict operator identity. Password is fixed for the demo — no change flow."
+    ? "Normal Verdict operator account — update your name and profile picture. Not linked to GitHub."
     : isOrgAdmin
       ? `Manage your details for ${DEMO_ORG.name}. Password changes need Platform Admin approval.`
       : "Update your display name. Password changes need Org Admin approval.";
@@ -204,9 +286,9 @@ export function Profile() {
         <div className="panel p-8 lg:col-span-1">
           <p className="mono-label">Profile Picture</p>
           <div className="mt-6 flex flex-col items-center gap-4">
-            {ghAvatar ? (
+            {shownAvatar ? (
               <img
-                src={ghAvatar}
+                src={shownAvatar}
                 alt={displayName}
                 className="h-24 w-24 shrink-0 border border-ink-700 object-cover"
                 referrerPolicy="no-referrer"
@@ -216,9 +298,45 @@ export function Profile() {
                 {initial}
               </div>
             )}
-            <p className="text-center text-[10px] text-ink-500">
-              {githubUser ? `From GitHub @${githubUser}` : "No GitHub username linked"}
-            </p>
+
+            {isPlatform ? (
+              <div className="flex w-full flex-col items-center gap-2">
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => void onPickAvatar(e.target.files?.[0] ?? null)}
+                />
+                <button
+                  type="button"
+                  className="btn-ghost text-xs"
+                  onClick={() => fileRef.current?.click()}
+                >
+                  Upload photo
+                </button>
+                {(avatarPreview || profile.avatar) && !clearAvatar ? (
+                  <button
+                    type="button"
+                    className="text-[10px] text-ink-400 underline hover:text-ink-200"
+                    onClick={() => {
+                      setClearAvatar(true);
+                      setAvatarPreview(null);
+                      setAvatarDirty(true);
+                    }}
+                  >
+                    Remove photo
+                  </button>
+                ) : null}
+                <p className="text-center text-[10px] text-ink-500">
+                  JPG/PNG · stored in your Verdict profile · not from GitHub
+                </p>
+              </div>
+            ) : (
+              <p className="text-center text-[10px] text-ink-500">
+                {githubUser ? `From GitHub @${githubUser}` : "No GitHub username linked"}
+              </p>
+            )}
           </div>
 
           <dl className="mt-8 space-y-4 border-t border-ink-800 pt-6 text-sm">
@@ -235,67 +353,73 @@ export function Profile() {
             ))}
           </dl>
 
-          {!isPlatform && (
-            <div className="mt-6 border-t border-ink-800 pt-6">
-              <p className="mono-label">Password</p>
-              {profile.password_change_pending ? (
-                <p className="mt-3 border border-ink-600 bg-ink-900 px-3 py-3 text-sm text-ink-200">
-                  A password change request is pending approval. Keep using your current password.
-                </p>
-              ) : (
-                <>
-                  <p className="mt-2 text-xs text-ink-500">
-                    {isOrgAdmin
+          <div className="mt-6 border-t border-ink-800 pt-6">
+            <p className="mono-label">Password</p>
+            {!isPlatform && profile.password_change_pending ? (
+              <p className="mt-3 border border-ink-600 bg-ink-900 px-3 py-3 text-sm text-ink-200">
+                A password change request is pending approval. Keep using your current password.
+              </p>
+            ) : (
+              <>
+                <p className="mt-2 text-xs text-ink-500">
+                  {isPlatform
+                    ? "Change your password directly — no approval needed."
+                    : isOrgAdmin
                       ? "Requests go to Platform Admin for approval."
                       : "Requests go to your Org Admin for approval."}
-                  </p>
-                  <form onSubmit={(e) => void requestPasswordChange(e)} className="mt-4 space-y-4">
-                    <label className="block">
-                      <span className="mono-label text-[9px]">Current password</span>
-                      <input
-                        type="password"
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        className="input-ink mt-2 w-full text-sm"
-                        required
-                        autoComplete="current-password"
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="mono-label text-[9px]">New password</span>
-                      <input
-                        type="password"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        className="input-ink mt-2 w-full text-sm"
-                        required
-                        minLength={6}
-                        autoComplete="new-password"
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="mono-label text-[9px]">Confirm new password</span>
-                      <input
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="input-ink mt-2 w-full text-sm"
-                        required
-                        minLength={6}
-                        autoComplete="new-password"
-                      />
-                    </label>
-                    <button type="submit" disabled={requesting} className="btn-ghost text-sm">
-                      {requesting ? "Submitting…" : "Request password change"}
-                    </button>
-                  </form>
-                </>
-              )}
-            </div>
-          )}
+                </p>
+                <form onSubmit={(e) => void requestPasswordChange(e)} className="mt-4 space-y-4">
+                  <label className="block">
+                    <span className="mono-label text-[9px]">Current password</span>
+                    <input
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      className="input-ink mt-2 w-full text-sm"
+                      required
+                      autoComplete="current-password"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mono-label text-[9px]">New password</span>
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="input-ink mt-2 w-full text-sm"
+                      required
+                      minLength={6}
+                      autoComplete="new-password"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mono-label text-[9px]">Confirm new password</span>
+                    <input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="input-ink mt-2 w-full text-sm"
+                      required
+                      minLength={6}
+                      autoComplete="new-password"
+                    />
+                  </label>
+                  <button type="submit" disabled={requesting} className="btn-ghost text-sm">
+                    {requesting
+                      ? isPlatform
+                        ? "Updating…"
+                        : "Submitting…"
+                      : isPlatform
+                        ? "Update password"
+                        : "Request password change"}
+                  </button>
+                </form>
+              </>
+            )}
+          </div>
         </div>
 
-        <form onSubmit={(e) => void saveName(e)} className="space-y-8 lg:col-span-2">
+        <form onSubmit={(e) => void saveProfile(e)} className="space-y-8 lg:col-span-2">
           <div className="panel p-8">
             <p className="mono-label">Your details</p>
             <label className="mt-6 block">
@@ -308,6 +432,16 @@ export function Profile() {
                 minLength={2}
               />
             </label>
+            {isPlatform && (
+              <label className="mt-6 block">
+                <span className="mono-label text-[9px]">Email</span>
+                <input
+                  value={profile.email}
+                  disabled
+                  className="input-ink mt-2 w-full text-sm opacity-60"
+                />
+              </label>
+            )}
           </div>
 
           {isOrgAdmin && (
@@ -392,7 +526,7 @@ export function Profile() {
               <p className="mono-label">Platform scope</p>
               <p className="mt-2 text-sm text-ink-300">
                 You operate Verdict itself — organizations, Org Admins, and usage. You do not
-                register client repos or open PR reports.
+                register client repos or open PR reports, and your account is not linked to GitHub.
               </p>
             </div>
           )}

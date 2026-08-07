@@ -37,6 +37,8 @@ profileRouter.get("/", (req, res) => {
 
   res.json({
     ...profile,
+    github_username: profile.role === "platform_admin" ? "" : profile.github_username,
+    avatar: profile.avatar ?? null,
     password_change_pending: profile.password_change_pending ?? false,
     onboarding_completed: profile.onboarding_completed ?? false,
   });
@@ -50,15 +52,63 @@ profileRouter.patch("/", (req, res, next) => {
       return;
     }
 
+    const member = localStore.findTeamMemberById(scope.userId);
+    if (!member) {
+      res.status(404).json({ error: "Profile not found" });
+      return;
+    }
+
     const name = typeof req.body?.name === "string" ? req.body.name : undefined;
     const completeOnboarding = req.body?.complete_onboarding === true;
+
+    let avatar: string | null | undefined = undefined;
+    if (req.body?.clear_avatar === true) {
+      avatar = null;
+    } else if (typeof req.body?.avatar === "string") {
+      const raw = req.body.avatar.trim();
+      if (raw === "") {
+        avatar = null;
+      } else if (!raw.startsWith("data:image/") && !/^https?:\/\//i.test(raw)) {
+        res.status(400).json({ error: "Avatar must be an image data URL or https URL" });
+        return;
+      } else if (raw.length > 600_000) {
+        res.status(400).json({ error: "Avatar too large — use a smaller image (max ~400KB)" });
+        return;
+      } else {
+        avatar = raw;
+      }
+    }
+
+    let password: string | undefined;
+    if (member.role === "platform_admin") {
+      const currentPassword =
+        typeof req.body?.current_password === "string" ? req.body.current_password : "";
+      const newPassword = typeof req.body?.new_password === "string" ? req.body.new_password : "";
+      if (newPassword) {
+        if (!currentPassword || member.password !== currentPassword) {
+          res.status(401).json({ error: "Current password is incorrect" });
+          return;
+        }
+        if (newPassword.length < 6) {
+          res.status(400).json({ error: "New password must be at least 6 characters" });
+          return;
+        }
+        password = newPassword;
+      }
+    }
 
     const updated = localStore.updateTeamMemberProfile(scope.userId, {
       name,
       complete_onboarding: completeOnboarding,
+      ...(avatar !== undefined ? { avatar } : {}),
+      ...(password !== undefined ? { password } : {}),
     });
 
-    res.json(updated);
+    res.json({
+      ...updated,
+      github_username: updated.role === "platform_admin" ? "" : updated.github_username,
+      avatar: updated.avatar ?? null,
+    });
   } catch (err) {
     next(err);
   }

@@ -93,7 +93,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const headers: Record<string, string> = {};
     if (u.id) headers["X-Verdict-User-Id"] = u.id;
     if (u.role) headers["X-Verdict-Role"] = u.role;
-    if (u.github_username) headers["X-Verdict-Github-Username"] = u.github_username;
+    if (u.role !== "platform_admin" && u.github_username) {
+      headers["X-Verdict-Github-Username"] = u.github_username;
+    }
     if (u.org_id) headers["X-Verdict-Org-Id"] = u.org_id;
     return headers;
   }
@@ -118,10 +120,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (onboardingDone) {
         localStorage.setItem(onboardingKey(data.id), "true");
       }
+      const customAvatar = typeof data.avatar === "string" && data.avatar ? data.avatar : undefined;
+      const ghAvatar =
+        role !== "platform_admin" ? githubAvatarUrl(data.github_username) ?? undefined : undefined;
       persist({
         ...data,
         role,
-        avatar: githubAvatarUrl(data.github_username) ?? undefined,
+        github_username: role === "platform_admin" ? undefined : data.github_username,
+        avatar: customAvatar ?? ghAvatar,
         onboarding_completed: onboardingDone,
       });
       return null;
@@ -142,11 +148,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profile.onboarding_completed === true ||
         user.onboarding_completed === true ||
         localStorage.getItem(onboardingKey(user.id)) === "true";
+      const customAvatar =
+        typeof profile.avatar === "string" && profile.avatar ? profile.avatar : undefined;
+      const ghAvatar =
+        role !== "platform_admin" ? githubAvatarUrl(profile.github_username) ?? undefined : undefined;
       persist({
         ...user,
         ...profile,
         role,
-        avatar: githubAvatarUrl(profile.github_username) ?? undefined,
+        github_username: role === "platform_admin" ? undefined : profile.github_username,
+        avatar: customAvatar ?? ghAvatar,
         onboarding_completed: onboardingDone,
       });
     } catch {

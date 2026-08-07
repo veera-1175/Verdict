@@ -41,7 +41,8 @@ authRouter.post("/login", (req, res, next) => {
       name: member.name,
       role: member.role,
       org_id: member.org_id,
-      github_username: member.github_username,
+      github_username: member.role === "platform_admin" ? "" : member.github_username,
+      avatar: member.avatar ?? null,
       onboarding_completed: member.onboarding_completed ?? false,
       password_change_pending: member.password_change_pending ?? false,
     });
