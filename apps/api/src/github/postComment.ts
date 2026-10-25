@@ -3,7 +3,6 @@ import { getInstallationOctokit, parseRepoFullName } from "./client.js";
 import { getPullRequestRow } from "../db/queries.js";
 
 function formatComment(report: ReviewReport, dashboardUrl: string, prId: string): string {
-  const critical = report.issues.filter((i) => i.severity === "critical" || i.severity === "high");
   const lines = [
     "## Verdict — AI code review",
     "",
@@ -13,15 +12,19 @@ function formatComment(report: ReviewReport, dashboardUrl: string, prId: string)
     "",
   ];
 
-  if (critical.length > 0) {
-    lines.push("### Critical / high issues", "");
-    for (const issue of critical.slice(0, 8)) {
+  if (report.issues.length > 0) {
+    lines.push("### Issues", "");
+    for (const issue of report.issues.slice(0, 20)) {
       const loc = `${issue.file}${issue.line ? `:${issue.line}` : ""}`;
       lines.push(`#### ${issue.severity.toUpperCase()} — ${issue.title}`);
       lines.push(`\`${loc}\` · ${issue.verifiedConfidence}% confidence`);
       lines.push("");
       if (issue.description?.trim()) {
         lines.push(issue.description.trim());
+        lines.push("");
+      }
+      if (issue.evidence?.trim()) {
+        lines.push(`Evidence: ${issue.evidence.trim()}`);
         lines.push("");
       }
       if (issue.suggestedFix?.trim()) {

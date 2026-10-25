@@ -1,3 +1,4 @@
+import { Octokit } from "@octokit/rest";
 import { getInstallationOctokit, isGithubAppConfigured } from "./client.js";
 import { listAccessibleRepos } from "./accessibleRepos.js";
 
@@ -10,11 +11,18 @@ export interface GitHubUserResult {
   has_login: boolean;
 }
 
-async function getAnyOctokit() {
-  const repos = await listAccessibleRepos();
-  const withAccess = repos.find((r) => r.app_has_access);
-  if (!withAccess) throw new Error("No GitHub App installation available");
-  return getInstallationOctokit(withAccess.installation_id);
+/** Installation token when the app is on a repo; otherwise the public API. */
+async function getSearchClient(): Promise<Octokit> {
+  if (isGithubAppConfigured()) {
+    try {
+      const repos = await listAccessibleRepos();
+      const withAccess = repos.find((r) => r.app_has_access);
+      if (withAccess) return getInstallationOctokit(withAccess.installation_id);
+    } catch (err) {
+      console.warn("[github] user search using public API:", (err as Error).message);
+    }
+  }
+  return new Octokit();
 }
 
 function mapUser(
@@ -41,12 +49,10 @@ export async function searchGithubUsers(
   query: string,
   existingLogins: Set<string>,
 ): Promise<GitHubUserResult[]> {
-  if (!isGithubAppConfigured()) return [];
-
   const q = query.trim();
   if (q.length < 2) return [];
 
-  const octokit = await getAnyOctokit();
+  const octokit = await getSearchClient();
 
   try {
     const exact = await octokit.rest.users.getByUsername({ username: q });

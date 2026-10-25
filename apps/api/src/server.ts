@@ -36,6 +36,7 @@ app.get("/health", (_req, res) => {
       groq: isGroqConfigured(),
       gemini: isGeminiConfigured(),
     },
+    review: "inspection",
   });
 });
 

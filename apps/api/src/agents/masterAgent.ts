@@ -22,6 +22,19 @@ const SEVERITY_RANK: Record<string, number> = {
   critical: 4,
 };
 
+function findingSource(tool: StaticFinding["tool"]): string {
+  if (tool === "eslint") return "ESLint";
+  if (tool === "semgrep") return "Semgrep";
+  return "Syntax";
+}
+
+function findingSeverity(finding: StaticFinding): MergedIssue["severity"] {
+  if (finding.tool === "syntax") return "critical";
+  if (finding.severity === "error") return "high";
+  if (finding.severity === "warning") return "medium";
+  return "low";
+}
+
 function titleSimilarity(a: string, b: string): number {
   const wordsA = new Set(a.toLowerCase().split(/\W+/).filter((w) => w.length > 3));
   const wordsB = new Set(b.toLowerCase().split(/\W+/).filter((w) => w.length > 3));
@@ -109,6 +122,34 @@ export function mergeAgentIssues(
         evidenceSpecificity: evidenceSpec,
         verified,
       }),
+    });
+  }
+
+  for (const finding of staticFindings) {
+    const already = merged.some(
+      (issue) => issue.file === finding.file && issue.line === finding.line && issue.line !== null,
+    );
+    if (already) continue;
+    const headline = finding.message.replace(/\s+/g, " ").trim().slice(0, 140);
+    const fromParser = finding.tool === "syntax";
+    merged.push({
+      file: finding.file,
+      line: finding.line,
+      title: headline || (fromParser ? "Syntax error" : finding.rule),
+      description: fromParser
+        ? `${finding.file} could not be parsed. ${finding.message}`
+        : `${finding.tool} reported ${finding.rule} in ${finding.file}. ${finding.message}`,
+      evidence: finding.message,
+      severity: findingSeverity(finding),
+      suggestedFix: fromParser
+        ? "Correct the syntax error in this file so it parses, then run the review again."
+        : `Fix the ${finding.rule} problem in ${finding.file}, then run the review again.`,
+      selfConfidence: 100,
+      agentSources: [findingSource(finding.tool)],
+      verifiedConfidence: 100,
+      confidenceExplanation: fromParser
+        ? "The language parser reported this error directly."
+        : `${findingSource(finding.tool)} reported this directly, so it counts toward the health score.`,
     });
   }
 

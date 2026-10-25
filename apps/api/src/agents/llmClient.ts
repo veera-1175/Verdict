@@ -34,11 +34,22 @@ export function isGeminiConfigured(): boolean {
   return !isPlaceholder(process.env.GEMINI_API_KEY);
 }
 
-async function callGroq(messages: LlmMessage[], model: string): Promise<LlmResponse> {
-  const key = process.env.GROQ_API_KEY;
-  if (isPlaceholder(key)) {
-    throw new Error("GROQ_API_KEY not set — get a free key at https://console.groq.com");
-  }
+const GROQ_MODELS = ["openai/gpt-oss-120b", "qwen/qwen3.8-27b", "openai/gpt-oss-20b"];
+
+function groqErrorShouldFallback(status: number, body: string): boolean {
+  if (status === 404 || status === 429) return true;
+  return status === 400 && /model|decommission|not found/i.test(body);
+}
+
+async function callGroqOnce(messages: LlmMessage[], model: string, key: string): Promise<LlmResponse> {
+  const payload: Record<string, unknown> = {
+    model,
+    messages,
+    temperature: 0,
+    max_tokens: 6000,
+    response_format: { type: "json_object" },
+  };
+  if (model.includes("gpt-oss")) payload.reasoning_effort = "medium";
 
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
@@ -46,18 +57,15 @@ async function callGroq(messages: LlmMessage[], model: string): Promise<LlmRespo
       Authorization: `Bearer ${key}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature: 0,
-      max_tokens: 2048,
-      response_format: { type: "json_object" },
-    }),
+    body: JSON.stringify(payload),
   });
 
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`Groq API ${res.status}: ${body.slice(0, 200)}`);
+    const error = new Error(`Groq API ${res.status}: ${body.slice(0, 200)}`) as Error & { status?: number; body?: string };
+    error.status = res.status;
+    error.body = body;
+    throw error;
   }
 
   const data = (await res.json()) as {
@@ -65,6 +73,27 @@ async function callGroq(messages: LlmMessage[], model: string): Promise<LlmRespo
   };
   const text = data.choices?.[0]?.message?.content?.trim() ?? "";
   return { text, provider: "groq", model };
+}
+
+async function callGroq(messages: LlmMessage[], model: string): Promise<LlmResponse> {
+  const key = process.env.GROQ_API_KEY;
+  if (isPlaceholder(key)) {
+    throw new Error("GROQ_API_KEY not set — get a free key at https://console.groq.com");
+  }
+
+  const models = [model, ...GROQ_MODELS.filter((candidate) => candidate !== model)];
+  let lastError: Error | undefined;
+  for (const candidate of models) {
+    try {
+      return await callGroqOnce(messages, candidate, key!);
+    } catch (err) {
+      const error = err as Error & { status?: number; body?: string };
+      lastError = error;
+      if (error.status == null || !groqErrorShouldFallback(error.status, error.body ?? error.message)) throw error;
+      console.warn(`[llm] ${candidate} unavailable, trying the next model`);
+    }
+  }
+  throw lastError ?? new Error("Groq request failed");
 }
 
 async function callGemini(prompt: string, model: string): Promise<LlmResponse> {
@@ -109,7 +138,7 @@ function messagesToPrompt(messages: LlmMessage[]): string {
  * Agent tier: 6 parallel reviews — Groq free tier (fast, cheap).
  */
 export async function callAgentLlm(messages: LlmMessage[]): Promise<LlmResponse> {
-  const model = process.env.GROQ_MODEL_AGENT ?? "llama-3.1-8b-instant";
+  const model = process.env.GROQ_MODEL_AGENT ?? "openai/gpt-oss-120b";
   return callGroq(messages, model);
 }
 
@@ -118,7 +147,7 @@ export async function callAgentLlm(messages: LlmMessage[]): Promise<LlmResponse>
  */
 export async function callMasterLlm(messages: LlmMessage[]): Promise<LlmResponse> {
   const geminiModel = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
-  const groqMaster = process.env.GROQ_MODEL_MASTER ?? "llama-3.3-70b-versatile";
+  const groqMaster = process.env.GROQ_MODEL_MASTER ?? "openai/gpt-oss-120b";
 
   if (process.env.LLM_MASTER_PROVIDER === "gemini" && isGeminiConfigured()) {
     return callGemini(messagesToPrompt(messages), geminiModel);

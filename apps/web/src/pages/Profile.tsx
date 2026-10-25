@@ -499,11 +499,7 @@ export function Profile() {
 
           {isDeveloper && (
             <div className="panel p-8">
-              <p className="mono-label">Access scope</p>
-              <p className="mt-2 text-xs text-ink-500">
-                You only see PRs authored by your linked GitHub username. Contact your Org Admin to
-                change it.
-              </p>
+              <p className="mono-label">Account</p>
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 <label className="block">
                   <span className="mono-label text-[9px]">Email</span>

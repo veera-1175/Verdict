@@ -1,3 +1,4 @@
+import { Octokit } from "@octokit/rest";
 import { getGithubApp, getInstallationOctokit, isGithubAppConfigured, parseRepoFullName } from "./client.js";
 
 export interface GitHubAccessibleRepo {
@@ -51,71 +52,80 @@ async function listInstallationGrantedRepos(
   return map;
 }
 
-async function listAccountRepos(
-  octokit: { request: (route: string, params?: Record<string, unknown>) => Promise<{ data: Array<{
-    id: number; full_name: string; private: boolean; description: string | null;
-  }> }> },
-  installationId: number,
-  account: { login?: string; type?: string } | null,
-): Promise<Map<number, GitHubAccessibleRepo>> {
-  const map = new Map<number, GitHubAccessibleRepo>();
-  const login = account?.login;
-  if (!login) return map;
-
-  const route =
-    account?.type === "Organization"
-      ? "GET /orgs/{org}/repos"
-      : "GET /users/{username}/repos";
-
-  try {
-    let page = 1;
-    while (true) {
-      const params =
-        account?.type === "Organization"
-          ? { org: login, type: "all", per_page: 100, page, sort: "updated" }
-          : { username: login, type: "owner", per_page: 100, page, sort: "updated" };
-
-      const { data } = await octokit.request(route, params);
-      for (const repo of data) {
-        map.set(repo.id, {
-          github_repo_id: repo.id,
-          full_name: repo.full_name,
-          installation_id: installationId,
-          private: repo.private,
-          description: repo.description,
-          app_has_access: false,
-        });
-      }
-      if (data.length < 100) break;
-      page += 1;
-    }
-  } catch (err) {
-    console.warn("[github] listAccountRepos failed:", (err as Error).message);
-  }
-
-  return map;
+function placeholderPrivateRepo(fullName: string): GitHubAccessibleRepo {
+  return {
+    github_repo_id: 0,
+    full_name: fullName,
+    installation_id: 0,
+    private: true,
+    description: null,
+    app_has_access: false,
+  };
 }
 
-export async function listAccessibleRepos(): Promise<GitHubAccessibleRepo[]> {
-  if (!isGithubAppConfigured()) {
-    throw new Error("GitHub App not configured — set GITHUB_APP_ID and private key in .env");
+/** Public repos for a user or org. No GitHub App installation required. */
+async function listPublicRepos(login: string): Promise<GitHubAccessibleRepo[]> {
+  const name = login.trim().replace(/^@/, "");
+  if (!name) return [];
+
+  const octokit = new Octokit();
+  let accountType = "User";
+  try {
+    const user = await octokit.rest.users.getByUsername({ username: name });
+    accountType = user.data.type;
+  } catch {
+    return [];
   }
 
+  const items =
+    accountType === "Organization"
+      ? await octokit.paginate(octokit.rest.repos.listForOrg, { org: name, type: "public", per_page: 100 })
+      : await octokit.paginate(octokit.rest.repos.listForUser, { username: name, type: "owner", per_page: 100 });
+
+  return items
+    .filter((repo) => !repo.private)
+    .map((repo) => ({
+      github_repo_id: repo.id,
+      full_name: repo.full_name,
+      installation_id: 0,
+      private: false,
+      description: repo.description ?? null,
+      app_has_access: false,
+    }));
+}
+
+async function listGrantedRepos(): Promise<GitHubAccessibleRepo[]> {
+  if (!isGithubAppConfigured()) return [];
   const app = getGithubApp();
-  const merged = new Map<number, GitHubAccessibleRepo>();
-
+  const merged = new Map<string, GitHubAccessibleRepo>();
   for await (const { octokit, installation } of app.eachInstallation.iterator()) {
-    const installationId = installation.id;
-
-    const granted = await listInstallationGrantedRepos(octokit, installationId);
-    const account = await listAccountRepos(octokit, installationId, installation.account);
-
-    for (const [id, repo] of account) {
-      merged.set(id, repo);
+    const granted = await listInstallationGrantedRepos(octokit, installation.id);
+    for (const repo of granted.values()) {
+      merged.set(repo.full_name.toLowerCase(), repo);
     }
-    for (const [id, repo] of granted) {
-      merged.set(id, repo);
-    }
+  }
+  return [...merged.values()];
+}
+
+export async function listAccessibleRepos(
+  accountLogin = "",
+  extraPrivateNames: string[] = [],
+): Promise<GitHubAccessibleRepo[]> {
+  const merged = new Map<string, GitHubAccessibleRepo>();
+
+  for (const repo of await listPublicRepos(accountLogin)) {
+    merged.set(repo.full_name.toLowerCase(), repo);
+  }
+
+  for (const repo of await listGrantedRepos()) {
+    merged.set(repo.full_name.toLowerCase(), repo);
+  }
+
+  for (const raw of extraPrivateNames) {
+    const fullName = raw.trim();
+    if (!fullName.includes("/")) continue;
+    const key = fullName.toLowerCase();
+    if (!merged.has(key)) merged.set(key, placeholderPrivateRepo(fullName));
   }
 
   return [...merged.values()].sort((a, b) => a.full_name.localeCompare(b.full_name));

@@ -110,6 +110,7 @@ interface LocalDb {
   team_members: LocalTeamMember[];
   notifications: LocalNotification[];
   password_requests: LocalPasswordRequest[];
+  manual_private_repos: string[];
 }
 
 const DEMO_ORG_ID = "org-veera";
@@ -157,14 +158,6 @@ const DEFAULT_TEAM: Omit<LocalTeamMember, "id" | "created_at">[] = [
     org_id: DEMO_ORG_ID,
     github_username: "demo-dev",
   },
-  {
-    email: "alice@verdict.local",
-    password: "dev123",
-    name: "Alice Developer",
-    role: "developer",
-    org_id: DEMO_ORG_ID,
-    github_username: "alice-dev",
-  },
 ];
 
 const DATA_DIR = join(process.cwd(), ".verdict");
@@ -180,6 +173,7 @@ function emptyDb(): LocalDb {
     team_members: [],
     notifications: [],
     password_requests: [],
+    manual_private_repos: [],
   };
 }
 
@@ -312,6 +306,7 @@ function loadDb(): LocalDb {
       team_members: parsed.team_members ?? [],
       notifications: parsed.notifications ?? [],
       password_requests: parsed.password_requests ?? [],
+      manual_private_repos: parsed.manual_private_repos ?? [],
     };
     return seedTeamMembers(db);
   } catch {
@@ -723,6 +718,21 @@ export const localStore = {
 
     saveDb(db);
     return this.getOrganization(orgId)!;
+  },
+
+  listManualPrivateRepos(): string[] {
+    return loadDb().manual_private_repos ?? [];
+  },
+
+  addManualPrivateRepo(fullName: string): string[] {
+    const db = loadDb();
+    const name = fullName.trim();
+    const key = name.toLowerCase();
+    if (!db.manual_private_repos.some((entry) => entry.toLowerCase() === key)) {
+      db.manual_private_repos.push(name);
+      saveDb(db);
+    }
+    return db.manual_private_repos;
   },
 
   isOrganizationActive(orgId: string | null): boolean {

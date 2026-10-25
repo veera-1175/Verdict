@@ -3,6 +3,7 @@ import type { StaticFinding, AgentResult } from "./agentInterface.js";
 import { runDomainAgent } from "./runDomainAgent.js";
 
 const AGENTS = [
+  "Inspection",
   "Security",
   "Code Quality",
   "Performance",
@@ -18,6 +19,7 @@ function agent(name: Domain) {
     runDomainAgent(name, files, staticResults);
 }
 
+export const inspectionAgent = agent("Inspection");
 export const securityAgent = agent("Security");
 export const qualityAgent = agent("Code Quality");
 export const performanceAgent = agent("Performance");

@@ -12,6 +12,7 @@ export function GitHubUserSearch({ value, onChange, onSelect, disabled }: Props)
   const [results, setResults] = useState<GitHubUserResult[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const skipSearchRef = useRef(false);
 
@@ -23,19 +24,23 @@ export function GitHubUserSearch({ value, onChange, onSelect, disabled }: Props)
     if (disabled || value.trim().length < 2) {
       setResults([]);
       setOpen(false);
+      setError(null);
       return;
     }
 
     const timer = window.setTimeout(() => {
       setLoading(true);
+      setError(null);
       apiGet<GitHubUserResult[]>(`/api/admin/github/users?q=${encodeURIComponent(value.trim())}`)
         .then((users) => {
           setResults(users);
           setOpen(users.length > 0);
+          if (users.length === 0) setError("No GitHub users found");
         })
-        .catch(() => {
+        .catch((err: unknown) => {
           setResults([]);
           setOpen(false);
+          setError(err instanceof Error ? err.message : "GitHub search failed");
         })
         .finally(() => setLoading(false));
     }, 300);
@@ -72,6 +77,7 @@ export function GitHubUserSearch({ value, onChange, onSelect, disabled }: Props)
         autoComplete="off"
       />
       {loading && <p className="mt-1 text-[10px] text-ink-500">Searching GitHub…</p>}
+      {error && !loading && <p className="mt-1 text-[10px] text-ink-200">{error}</p>}
       <p className="mt-1 text-[10px] text-ink-500">Click a result to autofill name and email.</p>
 
       {open && results.length > 0 && (

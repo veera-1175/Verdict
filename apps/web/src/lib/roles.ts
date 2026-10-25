@@ -19,22 +19,15 @@ export const ROLE_LABELS: Record<Role, string> = {
 };
 
 export const ROLE_DESCRIPTIONS: Record<Role, string> = {
-  platform_admin:
-    "Owns Verdict — creates organizations and Org Admins, monitors platform usage. Never accesses client repos or PR reports.",
-  org_admin:
-    "Runs one company — registers GitHub repos, manages developers, sees all org PR reviews and analytics.",
-  developer: "Writes code — sees only PRs they authored (matched by GitHub username).",
+  platform_admin: "You create organizations and follow how Verdict is being used.",
+  org_admin: "You manage this company's repositories, its team, and the reviews on their pull requests.",
+  developer: "You see the review reports for the pull requests you opened.",
 };
 
 export const DEMO_ORG = {
   id: "org-veera",
   name: "Veera Corp",
   github_org: "veera-1175",
-} as const;
-
-export const HIERARCHY = {
-  summary:
-    "Platform Admin owns Verdict (orgs + usage). Org Admin runs one company (repos, team, reviews). Developers only see their own PRs.",
 } as const;
 
 export const canAccessSettings = (role: Role) => role === "org_admin";
@@ -94,20 +87,14 @@ export const SEED_DEVELOPERS = [
     github: "demo-dev",
     org_id: DEMO_ORG.id,
   },
-  {
-    email: "alice@verdict.local",
-    password: "dev123",
-    name: "Alice Developer",
-    github: "alice-dev",
-    org_id: DEMO_ORG.id,
-  },
 ];
 
 export const AGENTS = [
-  { name: "Security", icon: "🛡️", focus: "Secrets, injection, auth bypass, CVEs" },
-  { name: "Code Quality", icon: "✨", focus: "Naming, duplication, complexity, dead code" },
-  { name: "Performance", icon: "⚡", focus: "N+1 queries, blocking I/O, memory leaks" },
-  { name: "Architecture", icon: "🏗️", focus: "Layering, module boundaries, dependencies" },
-  { name: "Documentation", icon: "📄", focus: "Docstrings, README, parameter clarity" },
-  { name: "Best Practices", icon: "✅", focus: "Idioms, error handling, test coverage" },
+  { name: "Inspection", icon: "🔎", focus: "Any file, any language. Broken syntax, bad structure, and small defects" },
+  { name: "Security", icon: "🛡️", focus: "Secrets, injection, and unsafe access" },
+  { name: "Code Quality", icon: "✨", focus: "Broken structure, dead code, and defects hidden by complexity" },
+  { name: "Performance", icon: "⚡", focus: "Slow queries, blocking work, and wasted memory" },
+  { name: "Architecture", icon: "🏗️", focus: "Modules that depend on each other in a way that will break" },
+  { name: "Documentation", icon: "📄", focus: "Docs that describe behavior the code does not have" },
+  { name: "Best Practices", icon: "✅", focus: "Error handling that hides failures" },
 ];

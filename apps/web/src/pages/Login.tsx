@@ -14,10 +14,10 @@ import { ThemeToggle } from "../components/ThemeToggle";
 import Snowfall from "../components/Snowfall";
 
 const FEATURES = [
-  { Icon: IconShieldFeature, title: "Security Agent", desc: "Secrets, injection risks, auth bypass detection" },
-  { Icon: IconSpark, title: "6-Agent Pipeline", desc: "Parallel Groq reviews with master merge" },
-  { Icon: IconChartFeature, title: "Confidence Score", desc: "Deterministic 40/30/20/10 formula per issue" },
-  { Icon: IconBolt, title: "GitHub Native", desc: "Auto PR comments and check runs on every push" },
+  { Icon: IconShieldFeature, title: "Real defects", desc: "Secrets, broken files, and unsafe code are called out" },
+  { Icon: IconSpark, title: "Every changed file", desc: "Reviewers read the pull request in any language" },
+  { Icon: IconChartFeature, title: "A health score", desc: "Each finding lowers the score. No findings means 100" },
+  { Icon: IconBolt, title: "Posted on GitHub", desc: "The score and the findings appear on the pull request" },
 ];
 
 const ROLE_ORDER: Role[] = ["platform_admin", "org_admin", "developer"];
@@ -80,15 +80,8 @@ export function Login() {
             Intelligence<br />
             <span className="text-ink-200">for your PRs.</span>
           </h1>
-          <p className="max-w-sm text-lg leading-relaxed text-ink-100">
-            Three roles: Platform Admin owns Verdict (orgs + usage), Org Admin runs a company
-            (repos + team), Developers only see their own PRs.
-          </p>
         </div>
-
-        <p className="relative font-mono text-xs text-ink-600">
-          Platform → Org → Developer → PR reviews
-        </p>
+        <div />
       </div>
 
       <div className="relative z-10 flex flex-1 flex-col justify-center bg-ink-950 px-6 py-12 sm:px-12 lg:px-16">
@@ -103,7 +96,7 @@ export function Login() {
 
           <p className="mono-label">Authentication</p>
           <h2 className="mt-2 text-3xl font-bold text-white">Sign in</h2>
-          <p className="mt-2 text-sm text-ink-500">Pick a role to try the demo hierarchy</p>
+          <p className="mt-2 text-sm text-ink-500">Choose a role</p>
 
           <div className="mt-8 space-y-2">
             {ROLE_ORDER.map((role) => (

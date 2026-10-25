@@ -153,8 +153,7 @@ export function Team() {
         <p className="mono-label">Administration</p>
         <h3 className="mt-2 text-3xl font-bold text-white">Team & access</h3>
         <p className="mt-2 max-w-2xl text-sm text-ink-400">
-          Manage developers for <span className="text-white">{DEMO_ORG.name}</span>. They only see
-          PRs authored by their linked GitHub username.
+          Manage developers for <span className="text-white">{DEMO_ORG.name}</span>.
         </p>
       </div>
 

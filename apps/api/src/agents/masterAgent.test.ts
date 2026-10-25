@@ -74,6 +74,38 @@ describe("computeOverallScore", () => {
     expect(computeOverallScore([])).toBe(100);
   });
 
+  it("counts every parser finding and stacks the penalties", () => {
+    const findings: StaticFinding[] = [
+      {
+        tool: "syntax",
+        file: "index.html",
+        line: 11,
+        rule: "parse",
+        message: "HTML parser inserted a body element because this document has no <body> tag",
+        severity: "error",
+      },
+      {
+        tool: "syntax",
+        file: "style.css",
+        line: 14,
+        rule: "parse",
+        message: "Unknown word margin",
+        severity: "error",
+      },
+    ];
+
+    const merged = mergeAgentIssues([], findings, []);
+    expect(merged).toHaveLength(2);
+    expect(computeOverallScore(merged)).toBe(50);
+  });
+
+  it("counts a linter finding when no agent reported it", () => {
+    const merged = mergeAgentIssues([], staticFindings, files);
+    expect(merged).toHaveLength(1);
+    expect(merged[0].agentSources).toEqual(["ESLint"]);
+    expect(computeOverallScore(merged)).toBe(88);
+  });
+
   it("lowers score for high severity issues", () => {
     const score = computeOverallScore([
       {

@@ -4,10 +4,12 @@ import {
   architectureAgent,
   bestPracticesAgent,
   docsAgent,
+  inspectionAgent,
   performanceAgent,
   qualityAgent,
   securityAgent,
 } from "./agents/index.js";
+import { runAuditAgent } from "./agents/runDomainAgent.js";
 import { saveReport, setPullRequestStatus, upsertPullRequest, upsertRepo } from "./db/queries.js";
 import { fetchChangedFiles } from "./github/fetchDiff.js";
 import { postGithubComment } from "./github/postComment.js";
@@ -44,6 +46,7 @@ async function runAgentsOnFiles(files: ChangedFile[]) {
   const staticFindings = await runStaticAnalysis(files);
 
   const agentFns = [
+    inspectionAgent,
     securityAgent,
     qualityAgent,
     performanceAgent,
@@ -67,6 +70,15 @@ async function runAgentsOnFiles(files: ChangedFile[]) {
       }
     }),
   );
+
+  const alreadyFound = results.flatMap((result) =>
+    result.issues.map((issue) => `${issue.file}:${issue.line ?? "?"} ${issue.title}`),
+  );
+  try {
+    results.push(await runAuditAgent(files, staticFindings, alreadyFound));
+  } catch (err) {
+    console.warn("[orchestrator] Audit failed:", (err as Error).message);
+  }
 
   return { results, staticFindings };
 }

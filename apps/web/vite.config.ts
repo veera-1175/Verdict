@@ -7,8 +7,9 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      "/api": { target: "http://localhost:3001", changeOrigin: true },
-      "/health": { target: "http://localhost:3001", changeOrigin: true },
+      // Same data as https://verdict-web.onrender.com — repos, PRs, and reviews.
+      "/api": { target: "https://verdict-api-x75u.onrender.com", changeOrigin: true },
+      "/health": { target: "https://verdict-api-x75u.onrender.com", changeOrigin: true },
     },
   },
 });

@@ -5,22 +5,22 @@ import type { Role } from "../lib/roles";
 
 const ORG_ADMIN_STEPS: { title: string; body: string; path?: string }[] = [
   {
-    title: "You run one company",
-    body: "Org Admin manages one organization — register repos, add developers, see all org PR reviews. Platform Admin does not do this for you.",
+    title: "You are Org Admin",
+    body: "You manage this company's repositories, its team, and the reviews on their pull requests.",
   },
   {
-    title: "Register company repos",
-    body: "Settings lists GitHub repos. Register ones where the Verdict App is installed for your org.",
+    title: "Register repos",
+    body: "Register the GitHub repos for this company.",
     path: "/settings",
   },
   {
     title: "Add developers",
-    body: "Team & RBAC links engineers by GitHub username. They only see PRs they authored.",
+    body: "Add the people on this team.",
     path: "/team",
   },
   {
-    title: "See all org PRs",
-    body: "You see every review in your org. Developers only see their own. Platform Admin never sees PR contents.",
+    title: "Reviews",
+    body: "Open a pull request to read its review.",
     path: "/",
   },
 ];
@@ -28,20 +28,20 @@ const ORG_ADMIN_STEPS: { title: string; body: string; path?: string }[] = [
 const DEVELOPER_STEPS: { title: string; body: string; path?: string }[] = [
   {
     title: "You are a Developer",
-    body: "Your PRs are reviewed by AI agents. Creating a GitHub repo does not make you Org or Platform Admin.",
+    body: "You see the review reports for the pull requests you opened.",
   },
   {
-    title: "Your scope",
-    body: "You only see pull requests you authored — matched to your linked GitHub username.",
+    title: "Your pull requests",
+    body: "Your list shows the pull requests you authored.",
     path: "/",
   },
   {
     title: "Review reports",
-    body: "Open any of your PRs to see severity, confidence scores, evidence, and suggested fixes.",
+    body: "Open a pull request to read its review.",
   },
   {
     title: "Your profile",
-    body: "Click your name in the sidebar. Password changes need Org Admin approval.",
+    body: "Your name in the sidebar opens your profile.",
     path: "/profile",
   },
 ];

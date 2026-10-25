@@ -45,18 +45,18 @@ export function Agents() {
   return (
     <section className="space-y-8">
       <div className="flex flex-wrap items-center gap-2 border border-ink-700 bg-ink-950 p-4 font-mono text-[10px] uppercase tracking-widest text-ink-300">
-        <span className="tag">Webhook</span>
+        <span className="tag">Pull request</span>
         <span>→</span>
-        <span className="tag">Static</span>
+        <span className="tag">File check</span>
         <span>→</span>
-        <span className="tag">6 Agents</span>
+        <span className="tag">Reviewers</span>
         <span>→</span>
-        <span className="tag border-white bg-white text-black">Master</span>
+        <span className="tag border-white bg-white text-black">Score</span>
         <span>→</span>
         <span className="tag">GitHub</span>
       </div>
 
-      <p className="section-desc">Click an agent card to view its findings across all reviewed PRs.</p>
+      <p className="section-desc">Click a reviewer to see what it found on your pull requests.</p>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {AGENTS.map((agent) => {
@@ -74,8 +74,7 @@ export function Agents() {
               <p className="agent-card-title">{agent.name}</p>
               <p className="agent-card-muted">{agent.focus}</p>
               <p className="agent-card-stat">{count}</p>
-              <p className="mono-label mt-1">{count === 1 ? "finding" : "findings"} · click to view</p>
-              <p className="agent-card-meta">llama-3.1-8b-instant</p>
+              <p className="mono-label mt-1">{count === 1 ? "finding" : "findings"}</p>
             </button>
           );
         })}
@@ -150,10 +149,9 @@ export function Agents() {
       )}
 
       <div className="panel p-6">
-        <p className="mono-label">Master agent</p>
+        <p className="mono-label">Final score</p>
         <p className="section-desc mt-3">
-          One Groq call per PR using <span className="font-mono text-white">llama-3.3-70b-versatile</span>.
-          Dedupes issues, applies confidence formula, posts GitHub comment + check run.
+          The findings are combined into one health score and posted on the pull request.
         </p>
       </div>
     </section>

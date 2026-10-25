@@ -47,6 +47,8 @@ export function Settings() {
   const [demoPrId, setDemoPrId] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [copiedLogin, setCopiedLogin] = useState<string | null>(null);
+  const [privateRepoName, setPrivateRepoName] = useState("");
+  const [addingPrivate, setAddingPrivate] = useState(false);
 
   useEffect(() => {
     if (!supabase) return;
@@ -184,6 +186,24 @@ export function Settings() {
     setTimeout(() => setCopiedLogin(null), 2000);
   }
 
+  async function addPrivateRepo() {
+    const fullName = privateRepoName.trim();
+    if (!fullName) return;
+    setAddingPrivate(true);
+    setError(null);
+    try {
+      const repo = await apiPost<GitHubRepoOption>("/api/admin/github/private-repos", { full_name: fullName });
+      setPrivateRepoName("");
+      const list = await apiGet<GitHubRepoOption[]>("/api/admin/github/repos");
+      setGithubRepos(list);
+      setSelectedKey(`${repo.installation_id}:${repo.full_name}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not add that private repository");
+    } finally {
+      setAddingPrivate(false);
+    }
+  }
+
   async function registerRepo() {
     if (!selectedRepo) return;
     setRegistering(true);
@@ -309,24 +329,36 @@ export function Settings() {
       <div className="panel p-6">
         <p className="mono-label">GitHub repositories</p>
         <p className="section-desc mt-3">
-          All repositories on your GitHub account are listed below. You can only register repos where the
-          Verdict GitHub App is installed — others show “needs app access”.
+          Public repositories on your GitHub account are listed here. Add a private repository as owner/name.
         </p>
+
+        <form
+          className="mt-6 flex flex-wrap items-end gap-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void addPrivateRepo();
+          }}
+        >
+          <div className="min-w-[240px] flex-1">
+            <label className="mono-label mb-2 block">Private repository</label>
+            <input
+              className="input-ink"
+              placeholder="owner/repository"
+              value={privateRepoName}
+              onChange={(e) => setPrivateRepoName(e.target.value)}
+            />
+          </div>
+          <button type="submit" className="btn-ghost" disabled={addingPrivate || !privateRepoName.trim()}>
+            {addingPrivate ? "Adding…" : "Add private repo"}
+          </button>
+        </form>
 
         {loadingGithub ? (
           <p className="mt-6 text-sm text-ink-400">Loading repositories from GitHub…</p>
         ) : githubRepos.length === 0 ? (
           <div className="mt-6 space-y-4">
-            <p className="text-sm text-ink-400">No repositories found on your GitHub App installation.</p>
-            <a
-              className="btn-ink inline-flex"
-              href={`https://github.com/apps/${appSlug}/installations/new`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Install GitHub App on a repo
-            </a>
-            <button type="button" className="btn-ghost ml-3" onClick={loadGithubRepos}>
+            <p className="text-sm text-ink-400">No public repositories found for this GitHub account.</p>
+            <button type="button" className="btn-ghost" onClick={loadGithubRepos}>
               Refresh list
             </button>
           </div>
@@ -521,7 +553,7 @@ export function Settings() {
               )}
               <p className="mt-3 text-xs text-ink-500">
                 Default password is <span className="font-mono">dev123</span>. Email is{" "}
-                <span className="font-mono">username@verdict.local</span>. Developers only see PRs they authored on GitHub.
+                <span className="font-mono">username@verdict.local</span>.
               </p>
             </div>
           </div>
@@ -577,13 +609,15 @@ export function Settings() {
         </div>
       </div>
 
-      <div className="panel p-6">
-        <p className="mono-label">GitHub App</p>
-        <p className="section-desc mt-3">
-          Repositories must be granted to the Verdict GitHub App before they appear in the dropdown above.
-        </p>
+      <div className="panel flex flex-wrap items-center justify-between gap-4 p-6">
+        <div className="min-w-0 flex-1">
+          <p className="mono-label">GitHub App</p>
+          <p className="section-desc mt-3">
+            Repositories on your account are listed above. Install the GitHub App on a repository before Verdict can review its pull requests.
+          </p>
+        </div>
         <a
-          className="btn-ink mt-6 inline-flex"
+          className="btn-ink inline-flex shrink-0"
           href={`https://github.com/apps/${appSlug}/installations/new`}
           target="_blank"
           rel="noreferrer"

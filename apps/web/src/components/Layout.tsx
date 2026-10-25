@@ -56,8 +56,8 @@ function navForRole(role: Role): { title: string; items: NavItem[]; admin?: bool
         title: "Administration",
         admin: true,
         items: [
-          { path: "/team", label: "Team & RBAC", Icon: IconShield },
-          { path: "/settings", label: "Repos & Settings", Icon: IconSettings },
+          { path: "/team", label: "Team", Icon: IconShield },
+          { path: "/settings", label: "Repositories", Icon: IconSettings },
         ],
       },
     ];
@@ -69,9 +69,9 @@ function navForRole(role: Role): { title: string; items: NavItem[]; admin?: bool
 const PAGE_TITLES: Record<string, string> = {
   "/": "Dashboard",
   "/analytics": "Analytics",
-  "/agents": "Agent Pipeline",
-  "/team": "Team & RBAC",
-  "/settings": "Repos & Settings",
+  "/agents": "Reviewers",
+  "/team": "Team",
+  "/settings": "Repositories",
   "/profile": "My Profile",
   "/organization": "Organization",
   "/repos": "Repository",
@@ -224,10 +224,10 @@ export function Layout() {
           {user?.role !== "platform_admin" && (
             <div className="nav-admin-group">
               <p className="mono-label px-5 py-2 text-[9px]">
-                Pipeline <span className="admin-badge">LIVE</span>
+                Reviews <span className="admin-badge">ON</span>
               </p>
               <p className="px-6 text-[10px] leading-relaxed text-ink-400">
-                Groq agents · ESLint · Semgrep · GitHub App
+                A pull request is read, scored, and commented on GitHub.
               </p>
             </div>
           )}
@@ -301,7 +301,7 @@ export function Layout() {
               {stats && user && canAccessOrgWorkspace(user.role) && (
                 <div className="hidden items-center gap-8 md:flex">
                   <div>
-                    <p className="mono-label">Avg score</p>
+                    <p className="mono-label" title="Average health of the latest review on each pull request">Avg health</p>
                     <p className="mt-1 text-2xl font-bold text-white">{stats.avg_score ?? "—"}</p>
                   </div>
                   <div className="h-10 w-px bg-ink-800" />

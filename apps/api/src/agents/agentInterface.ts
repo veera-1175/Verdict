@@ -16,7 +16,7 @@ export interface AgentResult {
 }
 
 export interface StaticFinding {
-  tool: "eslint" | "semgrep";
+  tool: "eslint" | "semgrep" | "syntax";
   file: string;
   line: number | null;
   rule: string;

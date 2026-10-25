@@ -64,14 +64,15 @@
 }
 
 @layer base {
-  html { font-size: 16px; scroll-behavior: smooth; }
+  html { font-size: 18px; scroll-behavior: smooth; }
   body {
     margin: 0;
     min-height: 100vh;
     background: var(--color-black);
     color: var(--ink-100);
     font-family: "Space Grotesk", system-ui, sans-serif;
-    -webkit-font-smoothing: antialiased;
+    font-weight: 600;
+    -webkit-font-smoothing: auto;
     transition: background-color 0.25s ease, color 0.25s ease;
   }
   ::selection { background: var(--color-white); color: var(--color-black); }
@@ -104,7 +105,7 @@
 
 @layer components {
   .mono-label {
-    @apply font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-ink-200;
+    @apply font-mono text-[13px] font-bold uppercase tracking-[0.14em] text-ink-200;
   }
 
   .panel {
@@ -193,7 +194,7 @@
   }
 
   .theme-toggle {
-    @apply inline-flex items-center gap-2 border border-ink-600 bg-transparent px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-widest text-ink-200;
+    @apply inline-flex items-center gap-2 border border-ink-600 bg-transparent px-3 py-2 font-mono text-[13px] font-bold uppercase tracking-widest text-ink-200;
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .theme-toggle:hover {
@@ -242,7 +243,7 @@
   }
 
   .tag {
-    @apply inline-flex items-center border border-ink-500 px-2.5 py-1 font-mono text-[10px] uppercase tracking-widest text-ink-200;
+    @apply inline-flex items-center border border-ink-500 px-2.5 py-1 font-mono text-[13px] font-bold uppercase tracking-widest text-ink-200;
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .tag:hover {
@@ -257,7 +258,7 @@
   }
 
   .fix-badge {
-    @apply inline-flex items-center bg-white px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-black;
+    @apply inline-flex items-center bg-white px-2.5 py-1 font-mono text-[13px] font-bold uppercase tracking-[0.14em] text-black;
   }
 
   .nav-active {
@@ -290,18 +291,18 @@
     @apply flex items-center gap-2 px-5 text-white;
   }
   .admin-badge {
-    @apply rounded-none border border-white/40 bg-white/10 px-1.5 py-0.5 font-mono text-[8px] font-bold tracking-widest text-white;
+    @apply rounded-none border border-white/40 bg-white/10 px-1.5 py-0.5 font-mono text-[12px] font-bold tracking-widest text-white;
   }
 
   .role-badge {
-    @apply inline-block font-mono text-[9px] font-bold uppercase tracking-widest;
+    @apply inline-block font-mono text-[12px] font-bold uppercase tracking-widest;
   }
   .role-badge-super { @apply text-white; }
   .role-badge-admin { @apply text-ink-100; }
   .role-badge-employee { @apply text-ink-300; }
 
   .btn-signout {
-    @apply mt-4 w-full border border-ink-600 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-widest text-ink-200;
+    @apply mt-4 w-full border border-ink-600 py-2.5 font-mono text-[13px] font-bold uppercase tracking-widest text-ink-200;
     transition: all 0.25s ease-spring;
   }
   .btn-signout:hover {
@@ -380,7 +381,7 @@
     @apply mt-4 font-mono text-2xl font-bold text-white;
   }
   .agent-card-meta {
-    @apply mt-3 font-mono text-[10px] text-ink-500;
+    @apply mt-3 font-mono text-[13px] font-bold text-ink-500;
   }
   .agent-card-selected .agent-card-title,
   .agent-card-selected .agent-card-stat {
@@ -524,7 +525,7 @@
   }
 
   .info-hint-popup {
-    @apply pointer-events-none absolute z-50 border border-ink-600 bg-black px-3 py-2 text-[11px] leading-relaxed text-ink-200 shadow-xl;
+    @apply pointer-events-none absolute z-50 border border-ink-600 bg-black px-3 py-2 text-[14px] font-semibold leading-relaxed text-ink-200 shadow-xl;
   }
 
   .shell-header-side {
@@ -652,3 +653,32 @@
 ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
 ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); transition: background 0.2s; }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-white); }
+
+/* One global pass: larger type and a heavier weight on every screen. */
+.font-light,
+.font-normal,
+.font-medium {
+  font-weight: 600;
+}
+.font-semibold,
+.font-bold {
+  font-weight: 700;
+}
+.text-\[8px\],
+.text-\[9px\] {
+  font-size: 12px;
+  font-weight: 700;
+}
+.text-\[10px\],
+.text-\[11px\] {
+  font-size: 14px;
+  font-weight: 700;
+}
+.text-xs {
+  font-size: 15px;
+  font-weight: 600;
+}
+.text-sm {
+  font-size: 17px;
+  font-weight: 600;
+}

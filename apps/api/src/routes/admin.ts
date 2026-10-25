@@ -21,22 +21,51 @@ function requireOrgAdmin(req: Request, res: Response, next: NextFunction) {
 
 adminRouter.use(requireOrgAdmin);
 
-adminRouter.get("/github/repos", async (_req, res, next) => {
+function githubAccountLogin(req: Request): string {
+  const scope = getAccessScope(req);
+  const org = scope.orgId ? localStore.getOrganization(scope.orgId) : null;
+  return (org?.github_org || scope.githubUsername || "").trim().replace(/^@/, "");
+}
+
+function withRegisteredFlag<T extends { github_repo_id: number }>(repos: T[]) {
+  const registeredIds = new Set(localStore.listRepos().map((r) => r.github_repo_id));
+  return repos.map((r) => ({
+    ...r,
+    registered: r.github_repo_id > 0 && registeredIds.has(r.github_repo_id),
+  }));
+}
+
+adminRouter.get("/github/repos", async (req, res, next) => {
   try {
-    if (!isGithubAppConfigured()) {
-      res.status(503).json({ error: "GitHub App not configured" });
+    const githubRepos = await listAccessibleRepos(
+      githubAccountLogin(req),
+      localStore.listManualPrivateRepos(),
+    );
+    res.json(withRegisteredFlag(githubRepos));
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.post("/github/private-repos", async (req, res, next) => {
+  try {
+    const fullName = typeof req.body?.full_name === "string" ? req.body.full_name.trim() : "";
+    if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(fullName)) {
+      res.status(400).json({ error: "Enter the repository as owner/name" });
       return;
     }
 
-    const githubRepos = await listAccessibleRepos();
-    const registeredIds = new Set(localStore.listRepos().map((r) => r.github_repo_id));
-
-    res.json(
-      githubRepos.map((r) => ({
-        ...r,
-        registered: registeredIds.has(r.github_repo_id),
-      })),
+    localStore.addManualPrivateRepo(fullName);
+    const githubRepos = await listAccessibleRepos(
+      githubAccountLogin(req),
+      localStore.listManualPrivateRepos(),
     );
+    const match = githubRepos.find((r) => r.full_name.toLowerCase() === fullName.toLowerCase());
+    if (!match) {
+      res.status(404).json({ error: "Repository not found" });
+      return;
+    }
+    res.status(201).json(withRegisteredFlag([match])[0]);
   } catch (err) {
     next(err);
   }
@@ -309,11 +338,6 @@ adminRouter.post("/demo-review", async (_req, res, next) => {
 
 adminRouter.get("/github/users", async (req, res, next) => {
   try {
-    if (!isGithubAppConfigured()) {
-      res.status(503).json({ error: "GitHub App not configured" });
-      return;
-    }
-
     const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
     if (q.length < 2) {
       res.json([]);

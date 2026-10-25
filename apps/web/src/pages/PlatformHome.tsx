@@ -50,13 +50,6 @@ export function PlatformHome() {
       ]
     : [];
 
-  const workflow = [
-    { n: "01", t: "Onboard org", d: "Create company + Org Admin" },
-    { n: "02", t: "Org connects GitHub", d: "Org Admin registers repos" },
-    { n: "03", t: "Team reviews", d: "Developers open PRs" },
-    { n: "04", t: "Monitor usage", d: "You track Verdict metrics only" },
-  ];
-
   return (
     <section className="space-y-10">
       {error && (
@@ -65,12 +58,9 @@ export function PlatformHome() {
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="mono-label">Verdict Platform</p>
+          <p className="mono-label">You are Platform Admin</p>
           <h3 className="mt-2 text-3xl font-bold text-white">Command Center</h3>
-          <p className="mt-2 max-w-2xl text-sm text-ink-400">
-            Operate the multi-tenant PR intelligence platform. Onboard organizations, assign Org Admins,
-            and monitor usage — without accessing client repositories or PR contents.
-          </p>
+          <p className="mt-2 max-w-2xl text-sm text-ink-400">You create organizations and follow how Verdict is being used.</p>
         </div>
         <Link to="/organizations" className="btn-ink shrink-0">
           Onboard organization
@@ -85,23 +75,6 @@ export function PlatformHome() {
             <p className="mt-2 font-mono text-[10px] uppercase tracking-wider text-ink-400">{m.sub}</p>
           </div>
         ))}
-      </div>
-
-      <div className="panel p-8">
-        <p className="mono-label">Client lifecycle</p>
-        <h3 className="mt-2 text-2xl font-bold text-white">Standard onboarding workflow</h3>
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {workflow.map((s) => (
-            <div key={s.n} className="border border-ink-800 bg-black p-5">
-              <p className="font-mono text-xs text-ink-400">{s.n}</p>
-              <p className="mt-2 font-semibold text-white">{s.t}</p>
-              <p className="mt-1 text-xs text-ink-400">{s.d}</p>
-            </div>
-          ))}
-        </div>
-        <p className="mt-6 text-xs text-ink-500">
-          Client PR contents stay with each Org Admin.
-        </p>
       </div>
 
       {overview && overview.organizations_detail.length > 0 && (

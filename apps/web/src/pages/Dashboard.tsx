@@ -4,7 +4,7 @@ import { apiGet, type RepoRow } from "../lib/api";
 import { fetchStats, type PlatformStats } from "../lib/stats";
 import { useAuth } from "../lib/auth";
 import { DASHBOARD_METRICS } from "../lib/metricInfos";
-import { HIERARCHY, ROLE_LABELS } from "../lib/roles";
+import { ROLE_DESCRIPTIONS, ROLE_LABELS } from "../lib/roles";
 import { ClickableKpi, InfoHint } from "../components/PanelHelpers";
 import PanelInfoModal, { type PanelInfoData } from "../components/PanelInfoModal";
 
@@ -32,34 +32,19 @@ export function Dashboard() {
     <section className="space-y-10">
       {error && <div className="border border-ink-600 bg-ink-900 px-4 py-3 text-sm text-ink-200">{error}</div>}
 
-      {isOrgAdmin && (
+      {user && (isOrgAdmin || isDeveloper) && (
         <div className="panel p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
-              <p className="mono-label">You are {user ? ROLE_LABELS[user.role] : "Org Admin"}</p>
-              <p className="mt-2 max-w-2xl text-sm text-ink-300">{HIERARCHY.summary}</p>
-              <p className="mt-2 text-xs text-ink-500">
-                Flow: Register repos in Settings → developers open PRs → you see all org reviews. Platform Admin
-                does not manage repos.
-              </p>
+              <p className="mono-label">You are {ROLE_LABELS[user.role]}</p>
+              <p className="mt-2 max-w-2xl text-sm text-ink-300">{ROLE_DESCRIPTIONS[user.role]}</p>
             </div>
-            <Link to="/settings" className="btn-ghost shrink-0 text-xs">
-              Register repos →
-            </Link>
+            {isOrgAdmin && (
+              <Link to="/settings" className="btn-ghost shrink-0 text-xs">
+                Register repos →
+              </Link>
+            )}
           </div>
-        </div>
-      )}
-
-      {isDeveloper && user?.github_username && (
-        <div className="panel p-4">
-          <p className="mono-label flex items-center">
-            Your scope
-            <InfoHint text="Developers only see PRs where the GitHub author matches your linked username." />
-          </p>
-          <p className="mt-2 text-sm text-ink-200">
-            Showing PRs authored by <span className="font-mono text-white">@{user.github_username}</span> only.
-            Creating a GitHub repo does not make you Org Admin — that role is assigned separately.
-          </p>
         </div>
       )}
 
