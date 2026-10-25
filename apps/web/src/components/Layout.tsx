@@ -18,6 +18,7 @@ import { OnboardingTour } from "./OnboardingTour";
 import { ThemeToggle } from "./ThemeToggle";
 import { apiGet, type PRMeta, type RepoRow } from "../lib/api";
 import { fetchStats, type PlatformStats } from "../lib/stats";
+import { useCorrectedStats } from "../lib/verdictScore";
 
 type NavItem = {
   path: string;
@@ -87,6 +88,7 @@ export function Layout() {
   const basePath = "/" + (location.pathname.split("/")[1] || "");
   const [dynamicTitle, setDynamicTitle] = useState<string | null>(null);
   const [stats, setStats] = useState<PlatformStats | null>(null);
+  const shownStats = useCorrectedStats(stats);
   const [tourOpen, setTourOpen] = useState(false);
   const [orgName, setOrgName] = useState<string | null>(null);
   const [orgIndustry, setOrgIndustry] = useState<string | null>(null);
@@ -298,16 +300,16 @@ export function Layout() {
               <h1 className="page-title mt-1 truncate">{headerTitle}</h1>
             </div>
             <div className="flex shrink-0 items-center gap-4 sm:gap-6">
-              {stats && user && canAccessOrgWorkspace(user.role) && (
+              {shownStats && user && canAccessOrgWorkspace(user.role) && (
                 <div className="hidden items-center gap-8 md:flex">
                   <div>
                     <p className="mono-label" title="Average health of the latest review on each pull request">Avg health</p>
-                    <p className="mt-1 text-2xl font-bold text-white">{stats.avg_score ?? "—"}</p>
+                    <p className="mt-1 text-2xl font-bold text-white">{shownStats.avg_score ?? "—"}</p>
                   </div>
                   <div className="h-10 w-px bg-ink-800" />
                   <div>
                     <p className="mono-label">PRs</p>
-                    <p className="mt-1 text-2xl font-bold text-white">{stats.total_prs}</p>
+                    <p className="mt-1 text-2xl font-bold text-white">{shownStats.total_prs}</p>
                   </div>
                 </div>
               )}

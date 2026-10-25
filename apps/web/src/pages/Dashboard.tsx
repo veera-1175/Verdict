@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { apiGet, type RepoRow } from "../lib/api";
 import { fetchStats, type PlatformStats } from "../lib/stats";
+import { useCorrectedStats } from "../lib/verdictScore";
 import { useAuth } from "../lib/auth";
 import { DASHBOARD_METRICS } from "../lib/metricInfos";
 import { ROLE_DESCRIPTIONS, ROLE_LABELS } from "../lib/roles";
@@ -14,6 +15,16 @@ export function Dashboard() {
   const [stats, setStats] = useState<PlatformStats | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<PanelInfoData | null>(null);
+  const shownStats = useCorrectedStats(stats);
+
+  function repoHealth(repo: RepoRow): number | null {
+    if (!shownStats) return repo.health_score;
+    const rows = shownStats.recent_activity.filter((row) => row.repo === repo.full_name);
+    if (rows.length === 0 || rows.length < repo.pr_count) return repo.health_score;
+    const nums = rows.map((row) => row.score).filter((score): score is number => score != null);
+    if (nums.length === 0) return repo.health_score;
+    return Math.round(nums.reduce((sum, score) => sum + score, 0) / nums.length);
+  }
 
   useEffect(() => {
     Promise.all([apiGet<RepoRow[]>("/api/repos"), fetchStats<PlatformStats>()])
@@ -51,28 +62,28 @@ export function Dashboard() {
       <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
         <ClickableKpi
           label={isDeveloper ? "Your repos" : "Repositories"}
-          value={stats?.total_repos ?? "—"}
+          value={shownStats?.total_repos ?? stats?.total_repos ?? "—"}
           onInfo={() => showInfo("repos")}
         />
         <ClickableKpi
           label={isDeveloper ? "Your PRs" : "PRs reviewed"}
-          value={stats?.total_prs ?? "—"}
+          value={shownStats?.total_prs ?? stats?.total_prs ?? "—"}
           onInfo={() => showInfo("prs")}
         />
         <ClickableKpi
           label={isDeveloper ? "Your issues" : "Issues found"}
-          value={stats?.total_issues ?? "—"}
+          value={shownStats?.total_issues ?? stats?.total_issues ?? "—"}
           onInfo={() => showInfo("issues")}
         />
         <ClickableKpi
           label="Avg health score"
-          value={stats?.avg_score ?? "—"}
+          value={shownStats?.avg_score ?? stats?.avg_score ?? "—"}
           accent
           onInfo={() => showInfo("health")}
         />
       </div>
 
-      {stats && stats.recent_activity.length > 0 && (
+      {shownStats && shownStats.recent_activity.length > 0 && (
         <div className="panel overflow-hidden">
           <div className="flex items-center border-b border-ink-700 px-6 py-4">
             <p className="mono-label flex items-center">
@@ -94,7 +105,7 @@ export function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {stats.recent_activity.map((a) => (
+              {shownStats.recent_activity.map((a) => (
                 <tr key={a.pr_id} className="table-row">
                   <td className="px-6 py-4 font-mono text-xs text-ink-200">{a.repo}</td>
                   <td className="px-6 py-4">#{a.pr_number}</td>
@@ -129,9 +140,9 @@ export function Dashboard() {
             <Link key={repo.id} to={`/repos/${repo.id}`} className="shortcut-card block">
               <p className="mono-label">Repository</p>
               <p className="mt-2 text-lg font-bold text-white">{repo.full_name}</p>
-              <p className="mt-2 text-sm text-ink-400">{repo.pr_count} PR(s) · Health {repo.health_score ?? "—"}</p>
+              <p className="mt-2 text-sm text-ink-400">{repo.pr_count} PR(s) · Health {repoHealth(repo) ?? "—"}</p>
               <div className="mt-4 h-1 bg-ink-800">
-                <div className="h-full bg-white transition-all" style={{ width: `${repo.health_score ?? 0}%` }} />
+                <div className="h-full bg-white transition-all" style={{ width: `${repoHealth(repo) ?? 0}%` }} />
               </div>
             </Link>
           ))}

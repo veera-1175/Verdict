@@ -19,6 +19,7 @@ import {
 } from "../lib/api";
 
 import { useAuth } from "../lib/auth";
+import { useLiveScores, verdictKey } from "../lib/verdictScore";
 
 
 
@@ -39,6 +40,22 @@ export function RepoDetail() {
   const [triggering, setTriggering] = useState<number | null>(null);
 
   const [message, setMessage] = useState<string | null>(null);
+
+  const liveScores = useLiveScores(
+    repo ? openPulls.map((pull) => ({ repo: repo.full_name, prNumber: pull.number })) : [],
+  );
+
+  function scoreFor(pull: OpenPullRow): number | null {
+    if (!repo) return pull.overall_score;
+    return liveScores[verdictKey(repo.full_name, pull.number)] ?? pull.overall_score;
+  }
+
+  const shownHealth = (() => {
+    if (!repo) return null;
+    const nums = openPulls.map((pull) => scoreFor(pull)).filter((score): score is number => score != null);
+    if (nums.length === 0) return repo.health_score;
+    return Math.round(nums.reduce((sum, score) => sum + score, 0) / nums.length);
+  })();
 
 
 
@@ -156,7 +173,7 @@ export function RepoDetail() {
 
           <span className="tag">{repo.pr_count} reviewed PR(s)</span>
 
-          {repo.health_score != null && <span className="tag border-white/40">Health {repo.health_score}</span>}
+          {shownHealth != null && <span className="tag border-white/40">Health {shownHealth}</span>}
 
           <a
 
@@ -274,7 +291,7 @@ export function RepoDetail() {
 
                       <Link to={`/prs/${pull.verdict_pr_id}`} className="row-link">
 
-                        Score {pull.overall_score ?? "—"} · {pull.verdict_status}
+                        Score {scoreFor(pull) ?? "—"} · {pull.verdict_status}
 
                       </Link>
 

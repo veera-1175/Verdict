@@ -17,6 +17,7 @@ import {
 import type { User } from "@supabase/supabase-js";
 
 import { getApiBase } from "../lib/apiBase";
+import { fetchLatestVerdictScore, useLiveScores, verdictKey } from "../lib/verdictScore";
 
 function copyText(text: string) {
   void navigator.clipboard.writeText(text);
@@ -41,6 +42,13 @@ export function Settings() {
   const [createdLogins, setCreatedLogins] = useState<Record<string, { email: string; password: string }>>({});
   const [health, setHealth] = useState<PlatformHealth | null>(null);
   const [openPulls, setOpenPulls] = useState<OpenPullsResponse | null>(null);
+  const [repoHealth, setRepoHealth] = useState<Record<string, number>>({});
+  const livePullScores = useLiveScores(
+    (openPulls?.pulls ?? []).map((pull) => ({
+      repo: openPulls?.full_name ?? "",
+      prNumber: pull.number,
+    })),
+  );
   const [loadingPulls, setLoadingPulls] = useState(false);
   const [triggeringPr, setTriggeringPr] = useState<number | null>(null);
   const [demoRunning, setDemoRunning] = useState(false);
@@ -62,6 +70,32 @@ export function Settings() {
   function loadRegisteredRepos() {
     apiGet<RepoRow[]>("/api/repos").then(setRepos).catch(() => setRepos([]));
   }
+
+  useEffect(() => {
+    if (repos.length === 0) return;
+    let cancelled = false;
+    Promise.all(
+      repos.map(async (repo) => {
+        const prs = await apiGet<Array<{ pr_number: number }>>(`/api/repos/${repo.id}/prs`).catch(() => []);
+        const scores = await Promise.all(
+          prs.map((pr) => fetchLatestVerdictScore(repo.full_name, pr.pr_number)),
+        );
+        const nums = scores.filter((score): score is number => score != null);
+        if (nums.length === 0) return null;
+        return [repo.id, Math.round(nums.reduce((sum, score) => sum + score, 0) / nums.length)] as const;
+      }),
+    ).then((rows) => {
+      if (cancelled) return;
+      const next: Record<string, number> = {};
+      for (const row of rows) {
+        if (row) next[row[0]] = row[1];
+      }
+      setRepoHealth(next);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [repos]);
 
   function loadGithubRepos() {
     setLoadingGithub(true);
@@ -463,7 +497,7 @@ export function Settings() {
                           <td className="px-4 py-3">
                             {pull.has_report && pull.verdict_pr_id ? (
                               <Link to={`/prs/${pull.verdict_pr_id}`} className="row-link">
-                                Score {pull.overall_score ?? "—"}
+                                Score {livePullScores[verdictKey(openPulls.full_name, pull.number)] ?? pull.overall_score ?? "—"}
                               </Link>
                             ) : pull.verdict_status ? (
                               <span className="tag">{pull.verdict_status}</span>
@@ -592,7 +626,7 @@ export function Settings() {
                     <Link to={`/repos/${repo.id}`} className="row-link">{repo.full_name}</Link>
                   </td>
                   <td className="px-4 py-3">{repo.pr_count}</td>
-                  <td className="px-4 py-3 font-mono">{repo.health_score ?? "—"}</td>
+                  <td className="px-4 py-3 font-mono">{repoHealth[repo.id] ?? repo.health_score ?? "—"}</td>
                   <td className="px-4 py-3 text-right">
                     <button
                       type="button"

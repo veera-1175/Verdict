@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchStats, type PlatformStats } from "../lib/stats";
+import { useCorrectedStats } from "../lib/verdictScore";
 import { ANALYTICS_METRICS } from "../lib/metricInfos";
 import { ClickableKpi, InfoHint } from "../components/PanelHelpers";
 import PanelInfoModal, { type PanelInfoData } from "../components/PanelInfoModal";
@@ -29,38 +30,39 @@ function BarChart({ data, onBarHover }: { data: Record<string, number>; onBarHov
 
 export function Analytics() {
   const [stats, setStats] = useState<PlatformStats | null>(null);
+  const shownStats = useCorrectedStats(stats);
   const [info, setInfo] = useState<PanelInfoData | null>(null);
 
   useEffect(() => {
     fetchStats<PlatformStats>().then(setStats).catch(() => setStats(null));
   }, []);
 
-  if (!stats) return <div className="panel p-8 text-ink-300">Loading analytics…</div>;
+  if (!shownStats) return <div className="panel p-8 text-ink-300">Loading analytics…</div>;
 
   return (
     <section className="space-y-8">
       <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
         <ClickableKpi
           label="Avg score"
-          value={stats.avg_score ?? "—"}
+          value={shownStats.avg_score ?? "—"}
           className="stat-card border border-ink-700"
           onInfo={() => setInfo(ANALYTICS_METRICS.avg_score)}
         />
         <ClickableKpi
           label="Total issues"
-          value={stats.total_issues}
+          value={shownStats.total_issues}
           className="stat-card border border-ink-700"
           onInfo={() => setInfo(ANALYTICS_METRICS.total_issues)}
         />
         <ClickableKpi
           label="PRs"
-          value={stats.total_prs}
+          value={shownStats.total_prs}
           className="stat-card border border-ink-700"
           onInfo={() => setInfo(ANALYTICS_METRICS.history)}
         />
         <ClickableKpi
           label="Repos"
-          value={stats.total_repos}
+          value={shownStats.total_repos}
           className="stat-card border border-ink-700"
           onInfo={() => setInfo(ANALYTICS_METRICS.avg_score)}
         />
@@ -75,7 +77,7 @@ export function Analytics() {
               Details →
             </button>
           </p>
-          <BarChart data={stats.issues_by_severity} />
+          <BarChart data={shownStats.issues_by_severity} />
         </div>
         <div className="panel p-6">
           <p className="mono-label mb-6 flex items-center">
@@ -85,7 +87,7 @@ export function Analytics() {
               Details →
             </button>
           </p>
-          <BarChart data={stats.issues_by_agent} />
+          <BarChart data={shownStats.issues_by_agent} />
         </div>
       </div>
 
@@ -114,7 +116,7 @@ export function Analytics() {
         </div>
         <table className="w-full text-sm">
           <tbody>
-            {stats.recent_activity.map((a) => (
+            {shownStats.recent_activity.map((a) => (
               <tr key={a.pr_id} className="table-row">
                 <td className="px-6 py-4">{a.repo}</td>
                 <td className="px-6 py-4">#{a.pr_number}</td>
